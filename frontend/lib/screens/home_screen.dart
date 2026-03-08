@@ -12,6 +12,7 @@ import '../widgets/voice_search_widget.dart';
 import 'package:image_picker/image_picker.dart';
 import 'notifications_screen.dart';
 import 'dart:async';
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import '../widgets/countdown_timer.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -30,6 +31,30 @@ class _HomeScreenState extends State<HomeScreen> {
   double _minPrice = 0;
   double _maxPrice = 10000;
   String _sortOption = '';
+  
+  final PageController _promoController = PageController();
+  Timer? _promoTimer;
+
+  final List<Map<String, dynamic>> _promos = [
+    {
+      'title': 'SmartMarket PRO',
+      'subtitle': 'Hər sifarişdə 5% Cashback qazan!',
+      'color': const Color(0xFFFF5722),
+      'icon': Icons.rocket_launch_rounded,
+    },
+    {
+      'title': 'Yalnız Bu Gün!',
+      'subtitle': 'Bütün burgerlərə 20% endirim',
+      'color': Colors.blueAccent,
+      'icon': Icons.local_offer_rounded,
+    },
+    {
+      'title': 'Dostunu Dəvət Et',
+      'subtitle': 'Hər dost üçün 5 AZN bonus qazan',
+      'color': Colors.green,
+      'icon': Icons.card_giftcard_rounded,
+    },
+  ];
   
   void _applyFilters() {
     final catMap = {1: 'pizza', 2: 'burger', 3: 'snack', 4: 'drink', 5: 'other'};
@@ -55,6 +80,18 @@ class _HomeScreenState extends State<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<ProductProvider>(context, listen: false).fetchProducts();
       Provider.of<ProductProvider>(context, listen: false).fetchFlashSales();
+    });
+
+    _promoTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (_promoController.hasClients) {
+        int next = (_promoController.page?.toInt() ?? 0) + 1;
+        if (next >= _promos.length) next = 0;
+        _promoController.animateToPage(
+          next,
+          duration: const Duration(milliseconds: 800),
+          curve: Curves.easeInOutCubic,
+        );
+      }
     });
   }
 
@@ -189,6 +226,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _promoController.dispose();
+    _promoTimer?.cancel();
     super.dispose();
   }
 
@@ -480,6 +519,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               const SizedBox(height: 32),
+              _buildPromoCarousel(isDark),
+              const SizedBox(height: 32),
 
               // Flash Sales Section
               if (productProvider.flashSales.isNotEmpty) ...[
@@ -646,6 +687,109 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildPromoCarousel(bool isDark) {
+    return Column(
+      children: [
+        SizedBox(
+          height: 160,
+          child: PageView.builder(
+            controller: _promoController,
+            itemCount: _promos.length,
+            itemBuilder: (context, index) {
+              final promo = _promos[index];
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  gradient: LinearGradient(
+                    colors: [
+                      promo['color'] as Color,
+                      (promo['color'] as Color).withOpacity(0.7),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (promo['color'] as Color).withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      right: -20,
+                      bottom: -20,
+                      child: Icon(
+                        promo['icon'] as IconData,
+                        size: 140,
+                        color: Colors.white.withOpacity(0.15),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            promo['title'] as String,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            promo['subtitle'] as String,
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.9),
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              'İndi Yoxla',
+                              style: TextStyle(
+                                color: promo['color'] as Color,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 12),
+        SmoothPageIndicator(
+          controller: _promoController,
+          count: _promos.length,
+          effect: ExpandingDotsEffect(
+            dotHeight: 6,
+            dotWidth: 6,
+            activeDotColor: Theme.of(context).colorScheme.primary,
+            dotColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+          ),
+        ),
+      ],
     );
   }
 }

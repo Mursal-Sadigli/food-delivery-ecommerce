@@ -1,6 +1,4 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/data/latest_all.dart' as tz;
-import 'package:timezone/timezone.dart' as tz;
 
 class NotificationService {
   static final NotificationService _notificationService = NotificationService._internal();
@@ -27,8 +25,6 @@ class NotificationService {
       android: initializationSettingsAndroid,
       iOS: initializationSettingsIOS,
     );
-
-    tz.initializeTimeZones();
 
     await flutterLocalNotificationsPlugin.initialize(
       initializationSettings,

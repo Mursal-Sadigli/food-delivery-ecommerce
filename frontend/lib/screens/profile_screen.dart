@@ -41,12 +41,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('Çıxış Et', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: const Text('Hesabınızdan çıxmaq istədiyinizə əminsiniz?', style: TextStyle(color: Colors.black54)),
+        title: Text('logout'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
+        content: Text('logout_confirm'.tr(), style: const TextStyle(color: Colors.black54)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Xeyr', style: TextStyle(color: Colors.black54, fontWeight: FontWeight.bold)),
+            child: Text('no'.tr(), style: const TextStyle(color: Colors.black54, fontWeight: FontWeight.bold)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -62,7 +62,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               elevation: 0,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('Bəli, çıxış et', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text('yes_logout'.tr(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -81,7 +81,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         centerTitle: true,
-        title: Text('Tənzimləmələr', style: TextStyle(color: isDark ? Colors.white : Colors.black, fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Text('settings'.tr(), style: TextStyle(color: isDark ? Colors.white : Colors.black, fontWeight: FontWeight.bold, fontSize: 18)),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -126,7 +126,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            user != null ? (user['name'] ?? 'İstifadəçi') : 'Yüklənir...',
+                            user != null ? (user['name'] ?? 'user'.tr()) : 'loading'.tr(),
                             style: TextStyle(
                               fontSize: 24, 
                               fontWeight: FontWeight.bold, 
@@ -170,38 +170,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               
               const SizedBox(height: 24),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                child: Text('Ümumi', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                child: Text('general'.tr(), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
               ),
 
               if (user != null && user['role'] == 'admin')
-                _buidlMenuTile(Icons.admin_panel_settings_outlined, 'Admin Dashboard', () {
+                _buidlMenuTile(Icons.admin_panel_settings_outlined, 'admin_dashboard'.tr(), () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminDashboardScreen()));
                 }, isDark),
               
-              _buidlMenuTile(Icons.shopping_bag_outlined, 'Sifarişlərim', () {
+              _buidlMenuTile(Icons.shopping_bag_outlined, 'orders'.tr(), () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const OrdersScreen()));
               }, isDark),
-              _buidlMenuTile(Icons.inventory_2_outlined, 'Mənim Elanlarım', () {
+              _buidlMenuTile(Icons.inventory_2_outlined, 'my_products'.tr(), () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProductsScreen()));
               }, isDark),
-              _buidlMenuTile(Icons.location_on_outlined, 'Çatdırılma Ünvanları', () {
+              _buidlMenuTile(Icons.location_on_outlined, 'address'.tr(), () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const AddressesScreen()));
               }, isDark),
-              _buidlMenuTile(Icons.payment_outlined, 'Ödəniş Üsulları', () {
+              _buidlMenuTile(Icons.payment_outlined, 'payment_methods'.tr(), () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentMethodsScreen()));
               }, isDark),
-              _buidlMenuTile(Icons.notifications_outlined, 'Bildirişlər', () {
+              _buidlMenuTile(Icons.notifications_outlined, 'notifications'.tr(), () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
               }, isDark),
-              _buidlMenuTile(Icons.rocket_launch_outlined, 'SmartMarket PRO', () {
+              _buidlMenuTile(Icons.rocket_launch_outlined, 'pro_member'.tr(), () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const ProSubscriptionScreen()));
               }, isDark),
-              _buidlMenuTile(Icons.card_giftcard_outlined, 'Dostlarını Dəvət Et', () {
+              _buidlMenuTile(Icons.card_giftcard_outlined, 'referral_bonus'.tr(), () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const ReferralScreen()));
               }, isDark),
-              _buidlMenuTile(Icons.stars_rounded, 'SmartXallar Dashboard', () {
+              _buidlMenuTile(Icons.stars_rounded, 'loyalty_points'.tr(), () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const LoyaltyDashboardScreen()));
               }, isDark),
               
@@ -211,8 +211,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   if (!biometric.isAvailable) return const SizedBox.shrink();
                   return SwitchListTile(
                     secondary: Icon(Icons.fingerprint, color: isDark ? Colors.white70 : Colors.black87),
-                    title: Text('Biometrik Giriş', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: isDark ? Colors.white : Colors.black87)),
-                    subtitle: const Text('FaceID / Barmaq izi', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    title: Text('biometric_login'.tr(), style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: isDark ? Colors.white : Colors.black87)),
+                    subtitle: Text('biometric_desc'.tr(), style: const TextStyle(fontSize: 12, color: Colors.grey)),
                     value: biometric.isBiometricEnabled,
                     activeColor: Theme.of(context).colorScheme.primary,
                     onChanged: (val) => biometric.toggleBiometric(val),
@@ -223,15 +223,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
               
               SwitchListTile(
                 secondary: Icon(Icons.security, color: isDark ? Colors.white70 : Colors.black87),
-                title: Text('İki-Faktorlu Giriş (2FA)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: isDark ? Colors.white : Colors.black87)),
-                subtitle: const Text('Email ilə təhlükəsiz giriş', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                title: Text('2fa_login'.tr(), style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: isDark ? Colors.white : Colors.black87)),
+                subtitle: Text('2fa_desc'.tr(), style: const TextStyle(fontSize: 12, color: Colors.grey)),
                 value: user?['isTwoFactorEnabled'] ?? false,
                 activeColor: Colors.green,
                 onChanged: (val) async {
                   final result = await authProvider.toggle2FA();
                   if (mounted && !result) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Xəta baş verdi'), backgroundColor: Colors.redAccent),
+                      SnackBar(content: Text('error'.tr()), backgroundColor: Colors.redAccent),
                     );
                   }
                 },
@@ -244,23 +244,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Divider(height: 1),
               ),
 
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                child: Text('Digər', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                child: Text('other'.tr(), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
               ),
-              _buidlMenuTile(Icons.help_outline, 'Yardım və Dəstək', () {
+              _buidlMenuTile(Icons.help_outline, 'help'.tr(), () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpAndSupportScreen()));
               }, isDark),
-              _buidlMenuTile(Icons.chat_outlined, 'Canlı Dəstək', () {
+              _buidlMenuTile(Icons.chat_outlined, 'live_chat'.tr(), () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatScreen()));
               }, isDark),
-              _buidlMenuTile(Icons.account_balance_wallet_outlined, 'Mənim Cüzdanım', () {
+              _buidlMenuTile(Icons.account_balance_wallet_outlined, 'wallet'.tr(), () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const WalletScreen()));
               }, isDark),
-              _buidlMenuTile(Icons.language_outlined, 'Dil (${context.locale.languageCode.toUpperCase()})', () {
+              _buidlMenuTile(Icons.language_outlined, '${'language'.tr()} (${context.locale.languageCode.toUpperCase()})', () {
                 _showLanguageSelector(context);
               }, isDark),
-              _buidlMenuTile(Icons.palette_outlined, 'Mövzu (${_getThemeName(context)})', () {
+              _buidlMenuTile(Icons.palette_outlined, '${'theme'.tr()} (${_getThemeName(context)})', () {
                 _showThemeSelector(context);
               }, isDark),
               
@@ -277,7 +277,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: Icon(Icons.logout, color: Colors.red.shade600, size: 22),
                       ),
                       const SizedBox(width: 16),
-                      Text('Hesabdan Çıx', style: TextStyle(color: Colors.red.shade600, fontSize: 16, fontWeight: FontWeight.bold)),
+                      Text('logout'.tr(), style: TextStyle(color: Colors.red.shade600, fontSize: 16, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
