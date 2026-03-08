@@ -1,21 +1,39 @@
 const Order = require('../models/Order');
+const User = require('../models/User');
 
 // Create new order
 exports.addOrderItems = async (req, res) => {
   try {
-    const { orderItems, shippingAddress, paymentMethod, itemsPrice, shippingPrice, totalPrice } = req.body;
+    const { 
+      orderItems, 
+      shippingAddress, 
+      paymentMethod, 
+      itemsPrice, 
+      shippingPrice, 
+      totalPrice,
+      scheduledAt 
+    } = req.body;
 
     if (orderItems && orderItems.length === 0) {
       return res.status(400).json({ message: 'Sifariş üçün məhsul yoxdur' });
     } else {
+      const user = await User.findById(req.user._id);
+      
+      // Pro istifadəçilər üçün çatdırılma pulsuzdur
+      let finalShippingPrice = shippingPrice;
+      if (user && user.isPro && user.subscriptionExpiry > new Date()) {
+        finalShippingPrice = 0;
+      }
+
       const order = new Order({
         orderItems,
         user: req.user._id,
         shippingAddress,
         paymentMethod,
         itemsPrice,
-        shippingPrice,
-        totalPrice,
+        shippingPrice: finalShippingPrice,
+        totalPrice: itemsPrice + finalShippingPrice,
+        scheduledAt: scheduledAt || null
       });
 
       const createdOrder = await order.save();
@@ -55,6 +73,30 @@ exports.updateOrderToPaid = async (req, res) => {
       };
 
       const updatedOrder = await order.save();
+
+      // Referral və Loyalty Points məntiqi
+      const user = await User.findById(order.user);
+      if (user) {
+        // Loyalty points qazanmaq (Sifariş məbləği qədər)
+        user.loyaltyPoints += Math.floor(order.totalPrice);
+        
+        // Referral bonusu (Yalnız ilk uğurlu sifarişdə)
+        const orderCount = await Order.countDocuments({ user: user._id, isPaid: true });
+        if (orderCount === 1 && user.referredBy) {
+          const referrer = await User.findById(user.referredBy);
+          if (referrer) {
+            referrer.walletBalance += 5;
+            referrer.walletTransactions.unshift({
+              amount: 5,
+              type: 'deposit',
+              description: `Referral bonusu (${user.name})`
+            });
+            await referrer.save();
+          }
+        }
+        await user.save();
+      }
+
       res.json(updatedOrder);
     } else {
       res.status(404).json({ message: 'Sifariş tapılmadı' });

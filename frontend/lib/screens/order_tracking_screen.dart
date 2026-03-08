@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:lottie/lottie.dart' hide Marker;
 import 'package:latlong2/latlong.dart';
 import 'main_screen.dart';
 
@@ -164,20 +165,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> with TickerPr
                             child: AnimatedBuilder(
                               animation: _pulseController,
                               builder: (context, child) {
-                                return Transform.scale(
-                                  scale: 1.0 + (_pulseController.value * 0.1),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.primary,
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(color: Theme.of(context).colorScheme.primary.withOpacity(0.5), blurRadius: 10)
-                                      ],
-                                      border: Border.all(color: Colors.white, width: 2),
-                                    ),
-                                    child: const Icon(Icons.delivery_dining, color: Colors.white, size: 24),
-                                  ),
+                                return Lottie.network(
+                                  'https://assets5.lottiefiles.com/packages/lf20_m6vumqsv.json', // Delivery Courier
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.contain,
                                 );
                               },
                             ),

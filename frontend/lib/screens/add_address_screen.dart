@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -24,6 +27,47 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
 
   final MapController _mapController = MapController();
   LatLng _centerLocation = const LatLng(40.4093, 49.8671); // Default Baku
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    _cityCtrl.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 1000), () {
+      if (_cityCtrl.text.isNotEmpty) {
+        _searchLocation(_cityCtrl.text);
+      }
+    });
+  }
+
+  Future<void> _searchLocation(String query) async {
+    try {
+      final fullQuery = '$query, ${_countryCtrl.text}';
+      final url = Uri.parse('https://nominatim.openstreetmap.org/search?format=json&q=${Uri.encodeComponent(fullQuery)}&limit=1');
+      
+      final response = await http.get(url, headers: {'User-Agent': 'SmartMarketApp'});
+      
+      if (response.statusCode == 200) {
+        final List data = json.decode(response.body);
+        if (data.isNotEmpty) {
+          final lat = double.parse(data[0]['lat']);
+          final lon = double.parse(data[0]['lon']);
+          final newPos = LatLng(lat, lon);
+          
+          setState(() {
+            _centerLocation = newPos;
+          });
+          _mapController.move(newPos, 12.0);
+        }
+      }
+    } catch (e) {
+      print('Geocoding error: $e');
+    }
+  }
 
   final List<Map<String, dynamic>> _addressTypes = [
     {'label': 'Ev', 'icon': Icons.home_rounded, 'color': const Color(0xFFFF5722)},
@@ -72,6 +116,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     _postalCodeCtrl.dispose();
     _countryCtrl.dispose();
     _noteCtrl.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 

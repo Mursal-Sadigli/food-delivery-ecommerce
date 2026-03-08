@@ -1,0 +1,20 @@
+{
+  "app_title": "SmartFood Delivery",
+  "home": "Ana Səhifə",
+  "search": "Axtar",
+  "orders": "Sifarişlər",
+  "profile": "Profil",
+  "add_to_cart": "Əlavə et",
+  "price": "Qiymət",
+  "pro_member": "SmartMarket Pro",
+  "referral_bonus": "Dostunu Dəvət Et",
+  "voice_search_hint": "Danışmaq üçün toxunun...",
+  "recommended_for_you": "Sizin üçün seçilənlər",
+  "order_status_preparing": "Hazırlanır",
+  "order_status_cooking": "Bişirilir",
+  "order_status_on_the_way": "Kuryerə verildi",
+  "order_status_delivered": "Qapınızdadır",
+  "schedule_order": "Gələcək üçün planla",
+  "loyalty_points": "SmartXallarınız",
+  "convert": "Çevir"
+}

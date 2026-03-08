@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 import '../providers/cart_provider.dart';
 import '../providers/product_provider.dart';
 import '../widgets/custom_button.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class ProductDetailScreen extends StatefulWidget {
   final Map<String, dynamic> product;
@@ -18,6 +21,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   double _userRating = 0.0;
   final TextEditingController _reviewController = TextEditingController();
   bool _isReviewSubmitting = false;
+  List<XFile> _selectedReviewImages = [];
 
   // Variations State
   int _selectedSizeIndex = 0;
@@ -77,7 +81,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     setState(() => _isReviewSubmitting = true);
 
     final productProvider = Provider.of<ProductProvider>(context, listen: false);
-    final success = await productProvider.addReview(widget.product['_id'], _userRating, comment);
+    // Real images would be uploaded to a bucket first, then URLs sent. 
+    // Here we simulate with file paths or placeholders.
+    final success = await productProvider.addReview(
+      widget.product['_id'], 
+      _userRating, 
+      comment,
+      images: _selectedReviewImages.map((e) => e.path).toList(),
+    );
 
     setState(() => _isReviewSubmitting = false);
 
@@ -126,6 +137,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         backgroundColor: Colors.transparent,
         iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black),
         actions: [
+          IconButton(
+            onPressed: () {
+              Share.share('Bu ləzzətli yeməyə bax! ${widget.product['name']}\nQiymət: ${widget.product['price']} ₼\nSmartFood-dan sifariş et!');
+            },
+            icon: const Icon(Icons.share_outlined),
+          ),
           IconButton(onPressed: () {}, icon: const Icon(Icons.favorite_border)),
         ],
       ),
@@ -407,6 +424,53 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         borderSide: BorderSide.none,
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 12),
+                  // Image picker for review
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () async {
+                          final picker = ImagePicker();
+                          final images = await picker.pickMultiImage();
+                          if (images.isNotEmpty) {
+                            setState(() => _selectedReviewImages.addAll(images));
+                          }
+                        },
+                        icon: const Icon(Icons.add_a_photo_outlined),
+                        tooltip: 'Şəkil əlavə et',
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _selectedReviewImages.isEmpty
+                            ? Text('Şəkil əlavə edilməyib', style: TextStyle(color: Colors.grey[500], fontSize: 12))
+                            : SizedBox(
+                                height: 50,
+                                child: ListView.builder(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: _selectedReviewImages.length,
+                                  itemBuilder: (context, idx) {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(right: 8),
+                                      child: Stack(
+                                        children: [
+                                          Image.file(File(_selectedReviewImages[idx].path), width: 50, height: 50, fit: BoxFit.cover),
+                                          Positioned(
+                                            right: 0,
+                                            top: 0,
+                                            child: GestureDetector(
+                                              onTap: () => setState(() => _selectedReviewImages.removeAt(idx)),
+                                              child: Container(color: Colors.black54, child: const Icon(Icons.close, size: 14, color: Colors.white)),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   

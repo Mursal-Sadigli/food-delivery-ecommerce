@@ -8,14 +8,23 @@ const generateToken = (id) => {
 
 exports.registerUser = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, referralCode: referredByCode } = req.body;
     const userExists = await User.findOne({ email });
 
     if (userExists) {
       return res.status(400).json({ message: 'İstifadəçi artıq mövcuddur' });
     }
 
-    const user = await User.create({ name, email, password });
+    let referredBy = null;
+    if (referredByCode) {
+      const referrer = await User.findOne({ referralCode: referredByCode.toUpperCase() });
+      if (referrer) {
+        referredBy = referrer._id;
+      }
+    }
+
+    const referralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const user = await User.create({ name, email, password, referralCode, referredBy });
 
     if (user) {
       res.status(201).json({
@@ -139,12 +148,14 @@ exports.socialLogin = async (req, res) => {
       // Yeni istifadəçi yarat
       // Sosial giriş üçün təsadüfi bir şifrə qoyuruq (əslində heç vaxt istifadə olunmayacaq)
       const password = Math.random().toString(36).slice(-10);
+      const referralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
       
       user = await User.create({
         name: name || 'Sosial İstifadəçi',
         email,
-        password, // Pre-save hook hashləyəcək
-        isSocial: true, // Opsional: modeli buna uyğun yeniləmək olar
+        password,
+        isSocial: true,
+        referralCode
       });
 
       if (user) {

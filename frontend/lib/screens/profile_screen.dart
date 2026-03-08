@@ -11,7 +11,10 @@ import 'notifications_screen.dart';
 import 'help_support_screen.dart';
 import 'chat_screen.dart';
 import 'wallet_screen.dart';
+import 'referral_screen.dart';
+import 'pro_subscription_screen.dart';
 import '../providers/biometric_provider.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -81,37 +84,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Avatar və Ad
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              // Avatar və Ad (Yenilənmiş Spacing)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey[900] : Colors.white,
+                  border: Border(
+                    bottom: BorderSide(
+                      color: isDark ? Colors.grey[800]! : Colors.grey[100]!,
+                      width: 1,
+                    ),
+                  ),
+                ),
                 child: Row(
                   children: [
                     Container(
-                      width: 80,
-                      height: 80,
+                      width: 85,
+                      height: 85,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: isDark ? Colors.grey[800] : Colors.grey.shade100,
                         boxShadow: [
-                          BoxShadow(color: isDark ? Colors.black.withOpacity(0.5) : Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5)),
+                          BoxShadow(
+                            color: isDark ? Colors.black.withOpacity(0.5) : Colors.black.withOpacity(0.05),
+                            blurRadius: 15,
+                            offset: const Offset(0, 8),
+                          ),
                         ]
                       ),
                       clipBehavior: Clip.antiAlias,
                       child: _buildAvatar(user, context, isDark),
                     ),
-                    const SizedBox(width: 20),
+                    const SizedBox(width: 24),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             user != null ? (user['name'] ?? 'İstifadəçi') : 'Yüklənir...',
-                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
+                            style: TextStyle(
+                              fontSize: 24, 
+                              fontWeight: FontWeight.bold, 
+                              color: isDark ? Colors.white : Colors.black87,
+                              letterSpacing: -0.5,
+                            ),
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            user != null ? (user['email'] ?? '') : '',
-                            style: const TextStyle(fontSize: 14, color: Colors.grey),
+                          const SizedBox(height: 8),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              user != null ? (user['email'] ?? '') : '',
+                              style: TextStyle(
+                                fontSize: 13, 
+                                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                height: 1.2,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -119,16 +149,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     IconButton(
                       onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfileScreen())),
                       icon: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: isDark ? Colors.grey[800] : Colors.grey.shade100, shape: BoxShape.circle),
-                        child: Icon(Icons.edit_outlined, color: isDark ? Colors.white70 : Colors.black87, size: 20),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.grey[800] : Colors.grey.shade100, 
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.edit_outlined, 
+                          color: isDark ? Colors.white70 : Colors.black87, 
+                          size: 22,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
               
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                 child: Text('Ümumi', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
@@ -145,6 +182,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               }, isDark),
               _buidlMenuTile(Icons.notifications_outlined, 'Bildirişlər', () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+              }, isDark),
+              _buidlMenuTile(Icons.rocket_launch_outlined, 'SmartMarket PRO', () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const ProSubscriptionScreen()));
+              }, isDark),
+              _buidlMenuTile(Icons.card_giftcard_outlined, 'Dostlarını Dəvət Et', () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const ReferralScreen()));
               }, isDark),
               
               const SizedBox(height: 8),
@@ -182,7 +225,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buidlMenuTile(Icons.account_balance_wallet_outlined, 'Mənim Cüzdanım', () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const WalletScreen()));
               }, isDark),
-              _buidlMenuTile(Icons.language_outlined, 'Dil (Azərbaycan)', () {}, isDark),
+              _buidlMenuTile(Icons.language_outlined, 'Dil (${context.locale.languageCode.toUpperCase()})', () {
+                _showLanguageSelector(context);
+              }, isDark),
               
               const SizedBox(height: 32),
               Padding(
@@ -236,6 +281,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showLanguageSelector(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Dil Seçin', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 20),
+              _buildLangTile(context, 'Azərbaycan', const Locale('az', 'AZ')),
+              _buildLangTile(context, 'English', const Locale('en', 'US')),
+              _buildLangTile(context, 'Русский', const Locale('ru', 'RU')),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLangTile(BuildContext context, String name, Locale locale) {
+    bool isSelected = context.locale == locale;
+    return ListTile(
+      title: Text(name, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+      trailing: isSelected ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
+      onTap: () {
+        context.setLocale(locale);
+        Navigator.pop(context);
+      },
     );
   }
 }

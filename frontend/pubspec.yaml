@@ -45,8 +45,14 @@ dependencies:
   sign_in_with_apple: ^6.0.0
   flutter_map: ^6.1.0
   latlong2: ^0.9.0
-  local_auth: ^3.0.1
-  local_auth_windows: ^2.0.1
+  local_auth: ^2.1.6
+  shimmer: any
+  share_plus: any
+  speech_to_text: any
+  pay: any
+  easy_localization: any
+  flutter_spinkit: any
+  intl: any
 
 dev_dependencies:
   flutter_test:
@@ -72,6 +78,7 @@ flutter:
 
   assets:
     - assets/icons/
+    - assets/translations/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

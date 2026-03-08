@@ -7,6 +7,9 @@ import '../providers/wishlist_provider.dart';
 import '../providers/product_provider.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/product_card.dart';
+import '../widgets/voice_search_widget.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'notifications_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -225,6 +228,22 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         actions: [
+          IconButton(
+            onPressed: () async {
+              final picker = ImagePicker();
+              final image = await picker.pickImage(source: ImageSource.camera);
+              if (image != null) {
+                // Image Search Logic
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('search'.tr() + '...'))
+                );
+                // Trigger provider search by image (mocked in backend)
+                Provider.of<ProductProvider>(context, listen: false).searchByImage(image.path);
+              }
+            },
+            icon: Icon(Icons.camera_alt_outlined, color: isDark ? Colors.white : Colors.black),
+            tooltip: 'Axtarış (Şəkil)',
+          ),
           Consumer<ThemeProvider>(
             builder: (context, themeProvider, child) {
               return IconButton(
@@ -300,16 +319,27 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                       onSubmitted: (_) => _applyFilters(),
                       decoration: InputDecoration(
-                        hintText: 'Yemək və ya restoran axtar...',
-                        hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
-                        prefixIcon: Icon(Icons.search, color: Colors.grey.shade500),
-                        suffixIcon: _searchQuery.isNotEmpty
-                            ? IconButton(icon: Icon(Icons.close, size: 18, color: isDark ? Colors.white : Colors.black), onPressed: () { 
-                                _searchController.clear(); 
-                                setState(() => _searchQuery = ''); 
+                        suffixIcon: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (_searchQuery.isNotEmpty)
+                              IconButton(
+                                icon: Icon(Icons.close, size: 18, color: isDark ? Colors.white : Colors.black),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() => _searchQuery = '');
+                                  _applyFilters();
+                                },
+                              ),
+                            VoiceSearchWidget(
+                              onResult: (text) {
+                                _searchController.text = text;
+                                setState(() => _searchQuery = text);
                                 _applyFilters();
-                              })
-                            : null,
+                              },
+                            ),
+                          ],
+                        ),
                         filled: true,
                         fillColor: isDark ? Colors.grey[800] : Colors.grey.shade100,
                         contentPadding: const EdgeInsets.symmetric(vertical: 12),
@@ -382,7 +412,18 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 12),
               
                   productProvider.isLoading
-                  ? const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator()))
+                  ? GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: 0.53,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                      ),
+                      itemCount: 4,
+                      itemBuilder: (context, index) => const SkeletonProductCard(),
+                    )
                   : filtered.isEmpty
                   ? Center(
                       child: Padding(

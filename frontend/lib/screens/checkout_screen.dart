@@ -4,6 +4,7 @@ import '../providers/cart_provider.dart';
 import '../providers/wallet_provider.dart';
 import 'order_tracking_screen.dart';
 import 'main_screen.dart';
+import 'package:intl/intl.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -16,6 +17,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   int _selectedMethod = 0;
   bool _isProcessing = false;
   final _promoController = TextEditingController();
+  
+  bool _isScheduled = false;
+  DateTime? _scheduledDateTime;
 
   final Color _purpleBg = const Color(0xFF3B1D8F);
 
@@ -38,6 +42,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       // Simulation: subtract from wallet
       // In a real app, this would be a backend call
       await wallet.deposit(-total); 
+    }
+
+    // Handle scheduled order
+    if (_isScheduled && _scheduledDateTime != null) {
+       // In real app, send _scheduledDateTime to backend
+       debugPrint('Sifariş planlandı: $_scheduledDateTime');
     }
 
     await Future.delayed(const Duration(seconds: 2));
@@ -229,6 +239,89 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   const SizedBox(width: 8),
                   Expanded(child: _paymentMethodChip(3, Icons.account_balance_wallet, color: const Color(0xFFFF5722))),
                 ],
+              ),
+              const SizedBox(height: 16),
+              if (_selectedMethod == 2) ...[
+                 SizedBox(
+                   width: double.infinity,
+                   height: 50,
+                   child: ElevatedButton.icon(
+                     onPressed: _processPayment,
+                     icon: const Icon(Icons.apple, color: Colors.white),
+                     label: const Text('Apple Pay ilə Ödə', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                     style: ElevatedButton.styleFrom(backgroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                   ),
+                 ),
+                 const SizedBox(height: 12),
+                 SizedBox(
+                   width: double.infinity,
+                   height: 50,
+                   child: ElevatedButton.icon(
+                     onPressed: _processPayment,
+                     icon: const Icon(Icons.g_mobiledata, color: Colors.white, size: 32),
+                     label: const Text('Google Pay ilə Ödə', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                     style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4285F4), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                   ),
+                 ),
+              ],
+              const SizedBox(height: 16),
+
+              // Schedule for Future
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey[900] : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: isDark ? Colors.grey[800]! : Colors.grey.shade100),
+                ),
+                child: Column(
+                  children: [
+                    SwitchListTile(
+                      title: const Text('Gələcək üçün planla', style: TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: const Text('Sifarişin nə vaxt gəlməsini seçin'),
+                      value: _isScheduled,
+                      onChanged: (val) {
+                        setState(() {
+                          _isScheduled = val;
+                          if (val && _scheduledDateTime == null) {
+                            _scheduledDateTime = DateTime.now().add(const Duration(hours: 1));
+                          }
+                        });
+                      },
+                      contentPadding: EdgeInsets.zero,
+                      activeColor: _purpleBg,
+                    ),
+                    if (_isScheduled) ...[
+                      const Divider(),
+                      ListTile(
+                        leading: const Icon(Icons.access_time_filled),
+                        title: Text(_scheduledDateTime != null 
+                          ? DateFormat('dd MMM, HH:mm').format(_scheduledDateTime!) 
+                          : 'Vaxt seçin'),
+                        trailing: const Icon(Icons.edit_calendar),
+                        onTap: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: _scheduledDateTime ?? DateTime.now(),
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime.now().add(const Duration(days: 7)),
+                          );
+                          if (date != null) {
+                            final time = await showTimePicker(
+                              context: context,
+                              initialTime: TimeOfDay.fromDateTime(_scheduledDateTime ?? DateTime.now()),
+                            );
+                            if (time != null) {
+                              setState(() {
+                                _scheduledDateTime = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+                              });
+                            }
+                          }
+                        },
+                      ),
+                    ],
+                  ],
+                ),
               ),
               const SizedBox(height: 32),
 

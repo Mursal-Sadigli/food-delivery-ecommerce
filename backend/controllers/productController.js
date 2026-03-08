@@ -110,7 +110,7 @@ exports.deleteProduct = async (req, res) => {
 // Add product review
 exports.createProductReview = async (req, res) => {
   try {
-    const { rating, comment } = req.body;
+    const { rating, comment, images } = req.body;
     const product = await Product.findById(req.params.id);
 
     if (product) {
@@ -127,6 +127,7 @@ exports.createProductReview = async (req, res) => {
         rating: Number(rating),
         comment,
         user: req.user._id,
+        images: images || [] // Şəkillər əlavə edildi
       };
 
       product.reviews.push(review);
@@ -141,5 +142,31 @@ exports.createProductReview = async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ message: 'Server xətası' });
+  }
+};
+// Get recommendations based on popular categories
+exports.getRecommendations = async (req, res) => {
+  try {
+    // Real logic would analyze user history. Here we pick top rated/popular.
+    const products = await Product.find({ rating: { $gte: 4 } }).limit(6);
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ message: 'Server xətası' });
+  }
+};
+
+// Placeholder for Image Search
+exports.searchByImage = async (req, res) => {
+  try {
+    // In a real app, we would use an AI model (like Google Vision or a custom ML model)
+    // to analyze req.body.image (base64) and find similar products.
+    // For now, we return random products as a simulation.
+    const products = await Product.find().limit(4);
+    res.json({
+      message: 'Şəkil analizi tamamlandı',
+      products: products
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Şəkil analizi zamanı xəta' });
   }
 };

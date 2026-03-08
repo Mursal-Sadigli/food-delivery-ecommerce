@@ -1,0 +1,20 @@
+{
+  "app_title": "SmartFood Delivery",
+  "home": "Home",
+  "search": "Search",
+  "orders": "Orders",
+  "profile": "Profile",
+  "add_to_cart": "Add to Cart",
+  "price": "Price",
+  "pro_member": "SmartMarket Pro",
+  "referral_bonus": "Invite a Friend",
+  "voice_search_hint": "Tap to speak...",
+  "recommended_for_you": "Recommended for you",
+  "order_status_preparing": "Preparing",
+  "order_status_cooking": "Cooking",
+  "order_status_on_the_way": "On the way",
+  "order_status_delivered": "At your door",
+  "schedule_order": "Schedule for later",
+  "loyalty_points": "SmartPoints",
+  "convert": "Convert"
+}

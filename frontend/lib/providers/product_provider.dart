@@ -41,13 +41,45 @@ class ProductProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> addReview(String productId, double rating, String comment) async {
+  Future<void> fetchRecommendations() async {
+    try {
+      final response = await _apiService.get('/products/recommendations');
+      if (response != null && response is List) {
+        // Here you could store them in a separate list for a "Recommended" section
+        _products = response; // For now we just update main products
+        notifyListeners();
+      }
+    } catch (e) {
+      print('Tövsiyələr gətirilərkən xəta: $e');
+    }
+  }
+
+  Future<void> searchByImage(String imagePath) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      // In a real app, read file and send as base64 or multipart
+      final response = await _apiService.post('/products/search-image', {
+        'image': 'base64_placeholder' // Simulation
+      });
+      if (response != null && response['products'] is List) {
+        _products = response['products'];
+      }
+    } catch (e) {
+      print('Şəkil ilə axtarış xətası: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> addReview(String productId, double rating, String comment, {List<String>? images}) async {
     try {
       await _apiService.post('/products/$productId/reviews', {
         'rating': rating,
         'comment': comment,
+        'images': images ?? [],
       });
-      // Rəy bildirildikdən sonra məhsulları yenilə ki, rəy data-da görünsün
       await fetchProducts();
       return true;
     } catch (e) {

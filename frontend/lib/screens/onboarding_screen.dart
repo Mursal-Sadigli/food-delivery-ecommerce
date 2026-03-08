@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'login_screen.dart';
-import '../widgets/custom_button.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -13,7 +13,31 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
-  bool isLastPage = false;
+  int _currentIndex = 0;
+
+  final List<OnboardingData> _pages = [
+    OnboardingData(
+      title: 'Axtardığınız Hər Şeyi Tapın',
+      subtitle: 'Minlərlə məhsul və restoran arasından seçiminizi edin. Hər şey bir toxunuş uzaqlığında.',
+      image: Icons.search_rounded,
+      color: const Color(0xFFFFE0B2),
+      iconColor: const Color(0xFFFF6D00),
+    ),
+    OnboardingData(
+      title: 'Sürətli və Təhlükəsiz Ödəniş',
+      subtitle: 'Bank kartı, Apple Pay və ya Cüzdan ilə tam təhlükəsiz alış-verişin həzzini çıxarın.',
+      image: Icons.account_balance_wallet_rounded,
+      color: const Color(0xFFE1F5FE),
+      iconColor: const Color(0xFF039BE5),
+    ),
+    OnboardingData(
+      title: 'Qapınıza Qədər Sürətli Çatdırılma',
+      subtitle: 'Sifarişlərinizi real-time xəritədə izləyin və ən qısa zamanda təslim alın.',
+      image: Icons.delivery_dining_rounded,
+      color: const Color(0xFFF1F8E9),
+      iconColor: const Color(0xFF43A047),
+    ),
+  ];
 
   void _completeOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
@@ -22,130 +46,201 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (mounted) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => const LoginScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      body: Container(
-        padding: const EdgeInsets.only(bottom: 80),
-        child: PageView(
-          controller: _controller,
-          onPageChanged: (index) {
-            setState(() {
-              isLastPage = index == 2;
-            });
-          },
-          children: [
-            _buildPage(
-              color: Colors.blue.shade50,
-              urlImage: 'assets/images/onboarding1.png', // We'll use icons as fallback
-              title: 'Axtardığınız Hər Şey',
-              subtitle: 'Minlərlə məhsul arasından istədiyiniz məhsulu asanlıqla tapın.',
-              icon: Icons.search_rounded,
+      backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
+      body: Stack(
+        children: [
+          PageView.builder(
+            controller: _controller,
+            itemCount: _pages.length,
+            onPageChanged: (index) {
+              setState(() {
+                _currentIndex = index;
+              });
+            },
+            itemBuilder: (context, index) {
+              return OnboardingPage(data: _pages[index]);
+            },
+          ),
+          
+          // Skip button
+          if (_currentIndex < _pages.length - 1)
+            Positioned(
+              top: 50,
+              right: 20,
+              child: TextButton(
+                onPressed: () => _controller.animateToPage(
+                  _pages.length - 1,
+                  duration: const Duration(milliseconds: 600),
+                  curve: Curves.easeOutCubic,
+                ),
+                child: Text(
+                  'Ötür',
+                  style: GoogleFonts.outfit(
+                    color: Colors.grey,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
             ),
-            _buildPage(
-              color: Colors.green.shade50,
-              urlImage: 'assets/images/onboarding2.png',
-              title: 'Sürətli və Təhlükəsiz Ödəniş',
-              subtitle: 'Məlumatlarınız tam qorunur. Ödənişləri rahat və sürətli edin.',
-              icon: Icons.security_rounded,
+            
+          // Bottom Controls
+          Positioned(
+            bottom: 50,
+            left: 30,
+            right: 30,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                SmoothPageIndicator(
+                  controller: _controller,
+                  count: _pages.length,
+                  effect: ExpandingDotsEffect(
+                    activeDotColor: const Color(0xFFFF5722),
+                    dotColor: Colors.grey.withOpacity(0.3),
+                    dotHeight: 8,
+                    dotWidth: 8,
+                    expansionFactor: 3,
+                    spacing: 8,
+                  ),
+                ),
+                
+                GestureDetector(
+                  onTap: () {
+                    if (_currentIndex == _pages.length - 1) {
+                      _completeOnboarding();
+                    } else {
+                      _controller.nextPage(
+                        duration: const Duration(milliseconds: 600),
+                        curve: Curves.easeOutCubic,
+                      );
+                    }
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    height: 60,
+                    width: _currentIndex == _pages.length - 1 ? 140 : 60,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF5722),
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFFF5722).withOpacity(0.3),
+                          blurRadius: 15,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: _currentIndex == _pages.length - 1
+                          ? Text(
+                              'Başlayaq',
+                              style: GoogleFonts.outfit(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            _buildPage(
-              color: Colors.purple.shade50,
-              urlImage: 'assets/images/onboarding3.png',
-              title: 'Sürətli Çatdırılma',
-              subtitle: 'Sifarişləriniz ən qısa zamanda qapınıza qədər gətirilsin.',
-              icon: Icons.local_shipping_rounded,
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
-      bottomSheet: isLastPage
-          ? Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              color: Colors.white,
-              height: 80,
-              child: CustomButton(
-                text: 'Başlayaq',
-                onPressed: _completeOnboarding,
-              ),
-            )
-          : Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              height: 80,
-              color: Colors.white,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  TextButton(
-                    onPressed: () => _controller.jumpToPage(2),
-                    child: const Text('Keç', style: TextStyle(fontSize: 16)),
-                  ),
-                  SmoothPageIndicator(
-                    controller: _controller,
-                    count: 3,
-                    effect: ExpandingDotsEffect(
-                      activeDotColor: Theme.of(context).colorScheme.primary,
-                      dotColor: Colors.grey.shade300,
-                      dotHeight: 8,
-                      dotWidth: 8,
-                      expansionFactor: 4,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () => _controller.nextPage(
-                      duration: const Duration(milliseconds: 500),
-                      curve: Curves.easeInOut,
-                    ),
-                    child: const Text('Növbəti', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
-            ),
     );
   }
+}
 
-  Widget _buildPage({
-    required Color color,
-    required String urlImage,
-    required String title,
-    required String subtitle,
-    required IconData icon,
-  }) {
+class OnboardingData {
+  final String title;
+  final String subtitle;
+  final IconData image;
+  final Color color;
+  final Color iconColor;
+
+  OnboardingData({
+    required this.title,
+    required this.subtitle,
+    required this.image,
+    required this.color,
+    required this.iconColor,
+  });
+}
+
+class OnboardingPage extends StatelessWidget {
+  final OnboardingData data;
+
+  const OnboardingPage({super.key, required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      color: Colors.white, // color was parameter, using white for clean look
+      padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          // Illustration Area
           Container(
-            height: 250,
-            width: 250,
+            height: size.height * 0.4,
+            width: double.infinity,
             decoration: BoxDecoration(
-              color: color,
+              color: data.color.withOpacity(isDark ? 0.05 : 0.6),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, size: 120, color: Theme.of(context).colorScheme.primary),
-          ),
-          const SizedBox(height: 64),
-          Text(
-            title,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.primary,
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
+            child: Center(
+              child: Icon(
+                data.image,
+                size: 150,
+                color: isDark ? data.iconColor.withOpacity(0.8) : data.iconColor,
+              ),
             ),
           ),
-          const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.black54, fontSize: 16, height: 1.5),
+          SizedBox(height: size.height * 0.08),
+          
+          // Text Area
+          Text(
+            data.title,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.outfit(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black87,
+              height: 1.2,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            data.subtitle,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.outfit(
+              fontSize: 16,
+              color: Colors.grey,
+              height: 1.5,
             ),
           ),
         ],

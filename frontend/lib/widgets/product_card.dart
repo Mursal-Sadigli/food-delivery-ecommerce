@@ -1,5 +1,68 @@
 import 'package:flutter/material.dart';
+import 'skeleton_item.dart';
 import '../screens/product_detail_screen.dart';
+
+class SkeletonProductCard extends StatelessWidget {
+  const SkeletonProductCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 5,
+            child: SkeletonItem(
+              borderRadius: 24,
+              width: double.infinity,
+              height: double.infinity,
+            ),
+          ),
+          Expanded(
+            flex: 4,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SkeletonItem(height: 16, width: 100),
+                      SizedBox(height: 8),
+                      SkeletonItem(height: 12, width: 140),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SkeletonItem(height: 10, width: 30),
+                          SizedBox(height: 4),
+                          SkeletonItem(height: 16, width: 50),
+                        ],
+                      ),
+                      SkeletonItem(height: 30, width: 60, borderRadius: 10),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class ProductCard extends StatelessWidget {
   final Map<String, dynamic> product;

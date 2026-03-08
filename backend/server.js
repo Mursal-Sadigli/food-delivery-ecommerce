@@ -22,7 +22,8 @@ const orderRoutes = require('./routes/orderRoutes');
 const userRoutes = require('./routes/userRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const couponRoutes = require('./routes/couponRoutes');
-const walletRoutes = require('./routes/walletRoutes');
+const referralRoutes = require('./routes/referralRoutes');
+const subscriptionRoutes = require('./routes/subscriptionRoutes');
 
 // Routing (əsas səhifə)
 app.use('/api/auth', authRoutes);
@@ -33,6 +34,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/wallet', walletRoutes);
+app.use('/api/referral', referralRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 app.get('/', (req, res) => {
   res.send('SmartMarket API işləyir...');
 });

@@ -1,0 +1,20 @@
+{
+  "app_title": "SmartFood Delivery",
+  "home": "Главная",
+  "search": "Поиск",
+  "orders": "Заказы",
+  "profile": "Профиль",
+  "add_to_cart": "Добавить",
+  "price": "Цена",
+  "pro_member": "SmartMarket Pro",
+  "referral_bonus": "Пригласи друга",
+  "voice_search_hint": "Нажмите, чтобы говорить...",
+  "recommended_for_you": "Рекомендовано для вас",
+  "order_status_preparing": "Готовится",
+  "order_status_cooking": "Жарится",
+  "order_status_on_the_way": "Передано курьеру",
+  "order_status_delivered": "У вашей двери",
+  "schedule_order": "Запланировать на потом",
+  "loyalty_points": "SmartБаллы",
+  "convert": "Конвертировать"
+}
