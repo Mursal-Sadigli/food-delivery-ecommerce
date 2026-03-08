@@ -161,20 +161,24 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              '${'order_id'.tr()} #${order['_id']?.toString().substring(order['_id'].toString().length - 6).toUpperCase() ?? 'N/A'}',
-                                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isDark ? Colors.white : Colors.black87),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              '${(order['orderItems'] as List?)?.length ?? 0} ${'items'.tr()}',
-                                              style: TextStyle(color: Colors.grey, fontSize: 12),
-                                            ),
-                                          ],
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                '${'order_id'.tr()} #${order['_id']?.toString().substring(order['_id'].toString().length - 6).toUpperCase() ?? 'N/A'}',
+                                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isDark ? Colors.white : Colors.black87),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                '${(order['orderItems'] as List?)?.length ?? 0} ${'items'.tr()}',
+                                                style: TextStyle(color: Colors.grey, fontSize: 12),
+                                              ),
+                                            ],
+                                          ),
                                         ),
+                                        const SizedBox(width: 8),
                                         Text(
                                           '${order['totalPrice']?.toStringAsFixed(2) ?? '0.00'} ₼',
                                           style: TextStyle(

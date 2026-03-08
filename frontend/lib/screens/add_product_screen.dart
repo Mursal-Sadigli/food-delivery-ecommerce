@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../widgets/custom_button.dart';
 import '../services/api_service.dart';
 
@@ -33,9 +34,15 @@ class _AddProductScreenState extends State<AddProductScreen> {
   bool _isSubmitting = false;
   bool _isSuccess = false;
 
-  final List<String> _categories = [
-    'Qida',
-    'Tərəvəz',
+  final List<Map<String, String>> _categories = [
+    {'key': 'cat_food', 'value': 'food'},
+    {'key': 'cat_drink', 'value': 'drink'},
+    {'key': 'cat_vegetable', 'value': 'vegetable'},
+    {'key': 'cat_fruit', 'value': 'fruit'},
+    {'key': 'cat_sweets', 'value': 'sweets'},
+    {'key': 'cat_meat_dairy', 'value': 'meat_dairy'},
+    {'key': 'cat_fastfood', 'value': 'fastfood'},
+    {'key': 'cat_other', 'value': 'other'},
   ];
 
   @override
@@ -49,7 +56,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
       _sellerNameCtrl.text = p['sellerName'] ?? '';
       
       // Kateqoriya yoxlanışı
-      if (_categories.contains(p['category'])) {
+      final exists = _categories.any((c) => c['value'] == p['category']);
+      if (exists) {
         _selectedCategory = p['category'];
       }
 
@@ -390,7 +398,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           value: _selectedCategory,
-          items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+          items: _categories.map((c) => DropdownMenuItem(value: c['value'], child: Text(c['key']!.tr()))).toList(),
           onChanged: (v) => setState(() => _selectedCategory = v),
           validator: (v) => v == null ? 'Kateqoriya seçin' : null,
           decoration: InputDecoration(

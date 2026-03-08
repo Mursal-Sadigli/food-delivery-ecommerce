@@ -8,6 +8,7 @@
   "forgot_password": "Forgot Password?",
   "home": "Home",
   "search": "Search",
+  "items": "items",
   "orders": "My Orders",
   "profile": "Profile",
   "add_to_cart": "Add to Cart",
@@ -106,5 +107,13 @@
   "courier_register": "Courier Registration",
   "courier_home": "Courier Dashboard",
   "courier_orders": "Orders",
-  "courier_earnings": "Earnings"
+  "courier_earnings": "Earnings",
+  "cat_food": "Food",
+  "cat_drink": "Drinks",
+  "cat_vegetable": "Vegetables",
+  "cat_fruit": "Fruits",
+  "cat_sweets": "Sweets",
+  "cat_meat_dairy": "Meat & Dairy",
+  "cat_fastfood": "Fast Food",
+  "cat_other": "Other"
 }

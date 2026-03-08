@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../providers/auth_provider.dart';
 import '../providers/cart_provider.dart';
 import '../providers/wishlist_provider.dart';
@@ -23,7 +24,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final List<String> categories = ['Hamısı', 'Pizza', 'Burger', 'Qəlyanaltı', 'İçkilər', 'Digər'];
+  final List<String> categories = ['Hamısı', 'food', 'drink', 'vegetable', 'fruit', 'sweets', 'meat_dairy', 'fastfood', 'other'];
   int selectedCategoryIndex = 0;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
@@ -57,8 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
   
   void _applyFilters() {
-    final catMap = {1: 'pizza', 2: 'burger', 3: 'snack', 4: 'drink', 5: 'other'};
-    final category = selectedCategoryIndex > 0 ? (catMap[selectedCategoryIndex] ?? '') : '';
+    final category = selectedCategoryIndex > 0 ? categories[selectedCategoryIndex] : '';
     
     Provider.of<ProductProvider>(context, listen: false).fetchProducts(
       keyword: _searchQuery,
@@ -576,8 +576,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   scrollDirection: Axis.horizontal,
                   itemCount: categories.length,
                   itemBuilder: (context, index) {
-                    final categoryIcons = [Icons.restaurant, Icons.local_pizza_outlined, Icons.lunch_dining_outlined, Icons.fastfood_outlined, Icons.local_drink_outlined, Icons.more_horiz];
+                    final categoryData = [
+                      {'name': 'Hamısı', 'icon': Icons.grid_view_rounded},
+                      {'name': 'cat_food', 'icon': Icons.restaurant_rounded},
+                      {'name': 'cat_drink', 'icon': Icons.local_drink_rounded},
+                      {'name': 'cat_vegetable', 'icon': Icons.eco_rounded},
+                      {'name': 'cat_fruit', 'icon': Icons.apple_rounded},
+                      {'name': 'cat_sweets', 'icon': Icons.cake_rounded},
+                      {'name': 'cat_meat_dairy', 'icon': Icons.set_meal_rounded},
+                      {'name': 'cat_fastfood', 'icon': Icons.fastfood_rounded},
+                      {'name': 'cat_other', 'icon': Icons.more_horiz_rounded},
+                    ];
                     final isSelected = index == selectedCategoryIndex;
+                    final item = categoryData[index];
                     return GestureDetector(
                       onTap: () {
                         setState(() => selectedCategoryIndex = index);
@@ -593,10 +604,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: isSelected ? Theme.of(context).colorScheme.primary : (isDark ? Colors.grey[800] : Colors.grey.shade100),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Icon(categoryIcons[index % categoryIcons.length], color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black)),
+                              child: Icon(item['icon'] as IconData, color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black)),
                             ),
                             const SizedBox(height: 8),
-                            Text(categories[index], style: TextStyle(fontSize: 12, color: isSelected ? (isDark ? Colors.white : Colors.black) : Colors.grey, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+                            Text(
+                              (item['name'] as String) == 'Hamısı' ? 'Hamısı' : (item['name'] as String).tr(),
+                              style: TextStyle(fontSize: 12, color: isSelected ? (isDark ? Colors.white : Colors.black) : Colors.grey, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal),
+                            ),
                           ],
                         ),
                       ),

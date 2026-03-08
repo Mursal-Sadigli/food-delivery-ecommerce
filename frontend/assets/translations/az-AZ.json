@@ -8,6 +8,7 @@
   "forgot_password": "Şifrəni unutmusunuz?",
   "home": "Ana Səhifə",
   "search": "Axtar",
+  "items": "məhsul",
   "orders": "Sifarişlərim",
   "profile": "Profil",
   "add_to_cart": "Əlavə et",
@@ -106,5 +107,13 @@
   "courier_register": "Kuryer kimi qeydiyyat",
   "courier_home": "Kuryer Paneli",
   "courier_orders": "Sifarişlər",
-  "courier_earnings": "Qazanc"
+  "courier_earnings": "Qazanc",
+  "cat_food": "Qida",
+  "cat_drink": "İçki",
+  "cat_vegetable": "Tərəvəz",
+  "cat_fruit": "Meyvə",
+  "cat_sweets": "Şirniyyat",
+  "cat_meat_dairy": "Ət və Süd",
+  "cat_fastfood": "Fast Food",
+  "cat_other": "Digər"
 }

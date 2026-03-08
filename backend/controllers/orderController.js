@@ -33,7 +33,10 @@ exports.addOrderItems = async (req, res) => {
         itemsPrice,
         shippingPrice: finalShippingPrice,
         totalPrice: itemsPrice + finalShippingPrice,
-        scheduledAt: scheduledAt || null
+        scheduledAt: scheduledAt || null,
+        // Ödəniş metodu Cüzdan və ya Kart (Stripe Simulyasiyası) dırsa, ödənilmiş sayılır
+        isPaid: (paymentMethod === 'Cüzdan' || paymentMethod === 'Kart'),
+        paidAt: (paymentMethod === 'Cüzdan' || paymentMethod === 'Kart') ? Date.now() : null
       });
 
       const createdOrder = await order.save();
