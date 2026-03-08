@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, enum: ['user', 'admin', 'courier'], default: 'user' },
+  role: { type: String, enum: ['user', 'admin', 'courier', 'seller'], default: 'user' },
   address: { type: String },
   profileImage: { type: String, default: '' },
   wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
@@ -57,7 +57,13 @@ const userSchema = new mongoose.Schema({
   isTwoFactorEnabled: { type: Boolean, default: false },
   twoFactorCode: { type: String },
   twoFactorExpires: { type: Date },
-  fcmToken: { type: String }
+  fcmToken: { type: String },
+  location: {
+    lat: { type: Number },
+    lng: { type: Number }
+  },
+  city: { type: String },
+  district: { type: String }
 }, { timestamps: true });
 
 // Parolu hash-ləmək

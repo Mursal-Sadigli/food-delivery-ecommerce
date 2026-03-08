@@ -532,3 +532,46 @@ exports.getAdvancedAnalytics = async (req, res) => {
   }
 };
 
+// @desc    Create a new restaurant (seller)
+// @route   POST /api/admin/restaurants
+// @access  Private/Admin
+exports.createRestaurant = async (req, res) => {
+  try {
+    const { name, email, password, address, city, district, lat, lng } = req.body;
+
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({ message: 'Bu email ilə artıq istifadəçi mövcuddur.' });
+    }
+
+    const restaurant = await User.create({
+      name,
+      email,
+      password,
+      role: 'seller', // Restoranlar sistemdə seller rolunda olur
+      address,
+      city,
+      district,
+      location: { lat, lng }
+    });
+
+    if (restaurant) {
+      await createLog(req.user._id, 'CREATE_RESTAURANT', 'User', restaurant._id, `Yeni restoran yaradıldı: ${name}`, req);
+      res.status(201).json({
+        _id: restaurant._id,
+        name: restaurant.name,
+        email: restaurant.email,
+        role: restaurant.role,
+        city: restaurant.city,
+        district: restaurant.district,
+        location: restaurant.location
+      });
+    } else {
+      res.status(400).json({ message: 'Yanlış restoran məlumatları' });
+    }
+  } catch (error) {
+    console.error('Create Restaurant Error:', error);
+    res.status(500).json({ message: 'Server xətası yarandı.' });
+  }
+};
+

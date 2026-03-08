@@ -83,6 +83,11 @@ export const updateUserRole = async (id: string, role: string) => {
   return data;
 };
 
+export const createRestaurant = async (restaurantData: any) => {
+  const { data } = await api.post('/admin/restaurants', restaurantData);
+  return data;
+};
+
 export const getCouriers = async () => {
   const { data } = await api.get('/admin/couriers');
   return data;

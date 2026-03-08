@@ -20,7 +20,8 @@ const {
   cancelOrder,
   refundOrder,
   globalSearch,
-  getAdvancedAnalytics
+  getAdvancedAnalytics,
+  createRestaurant
 } = require('../controllers/adminController');
 const { protect, admin } = require('../middlewares/authMiddleware');
 
@@ -54,5 +55,6 @@ router.route('/payments').get(protect, admin, getAllPayments);
 router.route('/audit-logs').get(protect, admin, getAuditLogs);
 router.route('/search').get(protect, admin, globalSearch);
 router.route('/analytics-advanced').get(protect, admin, getAdvancedAnalytics);
+router.route('/restaurants').post(protect, admin, createRestaurant);
 
 module.exports = router;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -17,28 +17,31 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getUsers } from "@/services/api";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
+import { AddRestaurantModal } from "./AddRestaurantModal";
 
 export default function RestaurantsPage() {
   const [restaurants, setRestaurants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const fetchRestaurants = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await getUsers();
+      // Sadecə seller və ya restoran olanları filtrli (role: seller olanları restoran kimi qəbul edirik)
+      const filters = data.filter((u: any) => u.role === 'seller' || u.role === 'admin');
+      setRestaurants(filters);
+    } catch (error) {
+      console.error("Restoranları gətirərkən xəta:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchRestaurants = async () => {
-      try {
-        const data = await getUsers();
-        // Sadecə seller və ya restoran olanları filtrli (role: seller olanları restoran kimi qəbul edirik)
-        const filters = data.filter((u: any) => u.role === 'seller' || u.role === 'admin');
-        setRestaurants(filters);
-      } catch (error) {
-        console.error("Restoranları gətirərkən xəta:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchRestaurants();
-  }, []);
+  }, [fetchRestaurants]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -47,7 +50,10 @@ export default function RestaurantsPage() {
           <h2 className="text-3xl font-bold tracking-tight">Restaurants</h2>
           <p className="text-muted-foreground">Sistemdəki bütün partnyor restoranlar və satıcılar.</p>
         </div>
-        <Button>Restoran Əlavə Et</Button>
+        <Button onClick={() => setIsModalOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Restoran Əlavə Et
+        </Button>
       </div>
 
       <Card>
@@ -67,6 +73,7 @@ export default function RestaurantsPage() {
                   <TableHead>Ad</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Rol</TableHead>
+                  <TableHead>Şəhər / Rayon</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Əməliyyat</TableHead>
                 </TableRow>
@@ -74,7 +81,7 @@ export default function RestaurantsPage() {
               <TableBody>
                 {restaurants.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
                       Heç bir restoran tapılmadı.
                     </TableCell>
                   </TableRow>
@@ -84,6 +91,7 @@ export default function RestaurantsPage() {
                       <TableCell className="font-medium">{rest.name}</TableCell>
                       <TableCell>{rest.email}</TableCell>
                       <TableCell className="capitalize">{rest.role}</TableCell>
+                      <TableCell>{rest.city || '-'} / {rest.district || '-'}</TableCell>
                       <TableCell>
                         <Badge variant="default">Aktiv</Badge>
                       </TableCell>
@@ -98,6 +106,12 @@ export default function RestaurantsPage() {
           )}
         </CardContent>
       </Card>
+
+      <AddRestaurantModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSuccess={fetchRestaurants}
+      />
     </div>
   );
 }
