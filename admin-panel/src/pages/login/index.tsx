@@ -65,7 +65,7 @@ export default function LoginPage() {
                 <Input 
                   id="email" 
                   type="email" 
-                  placeholder="admin@smartmarket.com" 
+                  placeholder="admin@smartfood.com" 
                   className="pl-10"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}

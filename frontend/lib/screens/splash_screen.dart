@@ -7,6 +7,8 @@ import 'login_screen.dart';
 import 'onboarding_screen.dart';
 import 'main_screen.dart';
 import 'courier_home_screen.dart';
+import '../services/api_service.dart';
+import 'maintenance_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -23,6 +25,20 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkInitialScreen() async {
+    // Maintenance Mode Yoxlaması
+    final apiService = ApiService();
+    final status = await apiService.checkMaintenanceStatus();
+    
+    if (status['isMaintenanceMode'] == true) {
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const MaintenanceScreen()),
+        );
+        return;
+      }
+    }
+
     await Future.delayed(const Duration(seconds: 2));
     final prefs = await SharedPreferences.getInstance();
     final bool showHome = prefs.getBool('showHome') ?? false;

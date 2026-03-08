@@ -116,4 +116,19 @@ class ApiService {
       rethrow;
     }
   }
+
+  Future<Map<String, dynamic>> checkMaintenanceStatus() async {
+    final uri = _buildUri('/settings/public');
+    try {
+      final response = await http.get(uri);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return {'isMaintenanceMode': false};
+    } catch (e) {
+      print('Maintenance Status Error: $e');
+      // Serverə qoşulmaq mümkün deyilsə, təhlükəsizlik üçün bloklayırıq
+      return {'isMaintenanceMode': true, 'error': e.toString()};
+    }
+  }
 }

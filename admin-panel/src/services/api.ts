@@ -154,4 +154,9 @@ export const globalSearch = async (query: string) => {
   return data;
 };
 
+export const getAdvancedAnalytics = async () => {
+  const { data } = await api.get('/admin/analytics-advanced');
+  return data;
+};
+
 export default api;

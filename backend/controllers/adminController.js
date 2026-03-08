@@ -396,3 +396,102 @@ exports.globalSearch = async (req, res) => {
   }
 };
 
+// --- Advanced Analytics & Command Center ---
+exports.getAdvancedAnalytics = async (req, res) => {
+  try {
+    // 1. Order Funnel (Stages)
+    const funnel = await Order.aggregate([
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // 2. Courier Leaderboard
+    const courierLeaderboard = await Order.aggregate([
+      { $match: { courier: { $ne: null } } },
+      {
+        $group: {
+          _id: "$courier",
+          orderCount: { $sum: 1 },
+          avgRating: { $avg: 5 }, // Ideal halda Review modelindən gəlməlidir
+          totalRevenue: { $sum: "$totalPrice" }
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "courierDetails"
+        }
+      },
+      { $unwind: "$courierDetails" },
+      {
+        $project: {
+          name: "$courierDetails.name",
+          orderCount: 1,
+          avgRating: 1,
+          totalRevenue: 1
+        }
+      },
+      { $sort: { orderCount: -1 } },
+      { $limit: 10 }
+    ]);
+
+    // 3. Revenue Flow (Hourly/Daily for line chart)
+    const revenueFlow = await Order.aggregate([
+      { $match: { isPaid: true } },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d %H:00", date: "$paidAt" } },
+          revenue: { $sum: "$totalPrice" },
+          orders: { $sum: 1 }
+        }
+      },
+      { $sort: { "_id": 1 } },
+      { $limit: 24 }
+    ]);
+
+    // 4. Map Data (Simplified)
+    const mapData = {
+      orders: await Order.find({ status: { $ne: 'Çatdırıldı' } }).select('status shippingAddress').populate('user', 'name'),
+      couriers: await User.find({ role: 'courier' }).select('name status'), // Coordinates dummy for now if missing
+      restaurants: await User.find({ role: 'shop' }).select('name address')
+    };
+
+    // 5. Cohort Analytics (New vs Returning)
+    const totalUsers = await User.countDocuments({ role: 'user' });
+    const usersWithOrders = await Order.distinct('user');
+    const returningUsers = await Order.aggregate([
+      { $group: { _id: "$user", count: { $sum: 1 } } },
+      { $match: { count: { $gt: 1 } } }
+    ]);
+
+    const cohortData = {
+      total: totalUsers,
+      active: usersWithOrders.length,
+      returning: returningUsers.length
+    };
+
+    // 6. Alert Timeline (Recent critical events)
+    const alerts = await AuditLog.find({
+      action: { $in: ['REFUND_ORDER', 'CANCEL_ORDER', 'USER_ROLE_CHANGE'] }
+    }).sort({ createdAt: -1 }).limit(10).populate('admin', 'name');
+
+    res.json({
+      funnel,
+      courierLeaderboard,
+      revenueFlow,
+      mapData,
+      cohortData,
+      alerts
+    });
+  } catch (error) {
+    console.error('Advanced Analytics Error:', error);
+    res.status(500).json({ message: 'Qabaqcıl analitika məlumatları toplana bilmədi.' });
+  }
+};
+

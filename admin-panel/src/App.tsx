@@ -12,6 +12,7 @@ import PromotionsPage from "./pages/promotions";
 import SettingsPage from "./pages/settings";
 import PaymentsPage from "./pages/payments";
 import AuditLogsPage from "./pages/audit-logs";
+import AnalyticsPage from "./pages/analytics";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { ThemeProvider } from "./components/theme-provider";
@@ -40,7 +41,7 @@ function AppRoutes() {
         <Route path="settings" element={<SettingsPage />} />
         <Route path="payments" element={<PaymentsPage />} />
         <Route path="audit-logs" element={<AuditLogsPage />} />
-        <Route path="analytics" element={<div>Analytics Page is coming soon.</div>} />
+        <Route path="analytics" element={<AnalyticsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

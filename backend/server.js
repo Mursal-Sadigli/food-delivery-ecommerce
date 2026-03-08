@@ -27,8 +27,15 @@ const subscriptionRoutes = require('./routes/subscriptionRoutes');
 const walletRoutes = require('./routes/walletRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const courierRoutes = require('./routes/courierRoutes');
+const settingRoutes = require('./routes/settingRoutes');
+const maintenanceMiddleware = require('./middlewares/maintenanceMiddleware');
 
 // Routing (əsas səhifə)
+app.use('/api/settings', settingRoutes); // Public settings (MUST be before middleware)
+
+// Maintenance Middleware - Sifariş, məhsul və digər bütün API-ləri qoruyur
+app.use(maintenanceMiddleware);
+
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);

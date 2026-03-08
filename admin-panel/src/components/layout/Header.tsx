@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { 
   Bell, 
   Search, 
@@ -68,7 +68,7 @@ export function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSelect = (type: string, id: string) => {
+  const handleSelect = (type: string, _id: string) => {
     setIsOpen(false);
     setQuery("");
     if (type === 'order') navigate('/orders');
