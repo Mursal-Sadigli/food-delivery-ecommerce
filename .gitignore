@@ -1,0 +1,12 @@
+# Flutter SDK / Framework copy
+flutter-ecommerce/
+
+# Node dependencies
+node_modules/
+
+# Environment variables
+.env
+
+# OS files
+.DS_Store
+Thumbs.db
