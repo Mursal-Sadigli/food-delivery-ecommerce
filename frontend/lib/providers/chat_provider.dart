@@ -26,23 +26,17 @@ class ChatProvider with ChangeNotifier {
   }
 
   Future<void> sendMessage(String content) async {
+    // Immediately add user message to list for snappy UX
+    _messages.add({'content': content, 'sender': '__me__', 'isAdmin': false});
+    notifyListeners();
+
     try {
-      final response = await _apiService.post('/chat', {'content': content});
-      if (response != null) {
-        _messages.add(response);
-        notifyListeners();
-      }
+      await _apiService.post('/chat', {'content': content});
+      // Wait 1.5s then refresh to get AI reply
+      await Future.delayed(const Duration(milliseconds: 1500));
+      await fetchMessages();
     } catch (e) {
       print('Mesaj göndərilərkən xəta: $e');
     }
-  }
-
-  // Polling for new messages (simulating real-time)
-  void startPolling() {
-    // In a real app, use WebSockets. Here we poll every 5 seconds for simulation.
-    Future.delayed(const Duration(seconds: 5), () async {
-      await fetchMessages();
-      startPolling();
-    });
   }
 }

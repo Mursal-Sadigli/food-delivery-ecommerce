@@ -115,5 +115,12 @@
   "cat_sweets": "Sweets",
   "cat_meat_dairy": "Meat & Dairy",
   "cat_fastfood": "Fast Food",
-  "cat_other": "Other"
+  "cat_other": "Other",
+  "discovery": "Explore",
+  "trending_foods": "🔥 Trending Foods",
+  "new_restaurants": "🆕 New Restaurants",
+  "popular_now": "⭐ Popular Now",
+  "online": "Online",
+  "type_message": "Type your message...",
+  "ai_bot": "AI Support"
 }

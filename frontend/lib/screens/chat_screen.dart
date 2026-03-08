@@ -20,7 +20,6 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<ChatProvider>(context, listen: false).fetchMessages();
-      Provider.of<ChatProvider>(context, listen: false).startPolling();
     });
   }
 

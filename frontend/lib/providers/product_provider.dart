@@ -9,12 +9,14 @@ class ProductProvider with ChangeNotifier {
   List<dynamic> _flashSales = [];
   List<dynamic> _recommendations = [];
   bool _isLoading = false;
+  Map<String, dynamic> _discoveryData = {};
 
   List<dynamic> get products => _products;
   List<dynamic> get myProducts => _myProducts;
   List<dynamic> get flashSales => _flashSales;
   List<dynamic> get recommendations => _recommendations;
   bool get isLoading => _isLoading;
+  Map<String, dynamic> get discoveryData => _discoveryData;
 
   Future<void> fetchProducts({
     String keyword = '',
@@ -44,6 +46,31 @@ class ProductProvider with ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  Future<void> fetchDiscovery() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final response = await _apiService.get('/products/discovery');
+      if (response != null) {
+        _discoveryData = response;
+      }
+    } catch (e) {
+      print('Discovery xətası: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Find product by ID locally
+  Map<String, dynamic>? findById(String id) {
+    try {
+      return _products.firstWhere((p) => p['_id'] == id);
+    } catch (e) {
+      return null;
     }
   }
 
@@ -181,15 +208,6 @@ class ProductProvider with ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
-    }
-  }
-
-  // Tək bir məhsulun mövcud məlumatını tapmaq üçün köməkçi
-  Map<String, dynamic>? findById(String id) {
-    try {
-      return _products.firstWhere((p) => p['_id'] == id);
-    } catch (e) {
-      return null;
     }
   }
 }

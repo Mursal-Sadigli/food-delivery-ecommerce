@@ -9,7 +9,8 @@ const {
   getRecommendations,
   searchByImage,
   getMyProducts,
-  getFlashSales
+  getFlashSales,
+  getDiscoveryFeed
 } = require('../controllers/productController');
 const { protect, admin } = require('../middlewares/authMiddleware');
 
@@ -18,6 +19,7 @@ const router = express.Router();
 router.route('/').get(getProducts).post(protect, createProduct);
 router.route('/flash-sales').get(getFlashSales);
 router.route('/recommendations').get(getRecommendations);
+router.route('/discovery').get(getDiscoveryFeed);
 router.route('/search-image').post(searchByImage);
 router.route('/myproducts').get(protect, getMyProducts);
 

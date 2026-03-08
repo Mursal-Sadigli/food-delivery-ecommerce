@@ -339,3 +339,34 @@ exports.getFlashSales = async (req, res) => {
     res.status(500).json({ message: 'Server xətası' });
   }
 };
+
+// Get Food Discovery Feed (Instagram Style)
+exports.getDiscoveryFeed = async (req, res) => {
+  try {
+    // 1. Trending Foods (Highest rating)
+    const trendingFoods = await Product.find({ rating: { $gte: 4.5 } })
+      .sort({ rating: -1 })
+      .limit(10);
+
+    // 2. New Restaurants (Users with role 'shop', recently created)
+    const User = require('../models/User');
+    const newRestaurants = await User.find({ role: 'shop' })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .select('name profileImage address');
+
+    // 3. Just for you (Based on popularity)
+    const popularProducts = await Product.find({})
+      .sort({ numReviews: -1 })
+      .limit(10);
+
+    res.json({
+      trending: trendingFoods,
+      restaurants: newRestaurants,
+      popular: popularProducts
+    });
+  } catch (error) {
+    console.error('Discovery Feed Error:', error);
+    res.status(500).json({ message: 'Discovery feed yüklənərkən xəta' });
+  }
+};
