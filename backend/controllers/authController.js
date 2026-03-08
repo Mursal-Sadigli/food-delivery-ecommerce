@@ -1,6 +1,6 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
-const { sendResetEmail } = require('../utils/emailService');
+const { sendResetEmail, send2FACode } = require('../utils/emailService');
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
@@ -49,6 +49,22 @@ exports.loginUser = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user && (await user.matchPassword(password))) {
+      // Check if 2FA is enabled
+      if (user.isTwoFactorEnabled) {
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        user.twoFactorCode = otp;
+        user.twoFactorExpires = Date.now() + 5 * 60 * 1000; // 5 mins
+        await user.save();
+
+        await send2FACode(user.email, otp);
+
+        return res.json({
+          twoFactorRequired: true,
+          email: user.email,
+          message: 'İki-faktorlu doğrulama kodu emailinizə göndərildi'
+        });
+      }
+
       res.json({
         _id: user.id,
         name: user.name,
@@ -173,5 +189,56 @@ exports.socialLogin = async (req, res) => {
   } catch (error) {
     console.error("Sosial Giriş Xətası:", error);
     res.status(500).json({ message: 'Server xətası', error: error.message });
+  }
+};
+// @desc    Verify 2FA Code
+// @route   POST /api/auth/verify-2fa
+// @access  Public
+exports.verify2FA = async (req, res) => {
+  try {
+    const { email, code } = req.body;
+    const user = await User.findOne({ 
+      email,
+      twoFactorCode: code,
+      twoFactorExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Yanlış və ya vaxtı keçmiş 2FA kodu' });
+    }
+
+    user.twoFactorCode = undefined;
+    user.twoFactorExpires = undefined;
+    await user.save();
+
+    res.json({
+      _id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      token: generateToken(user._id),
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server xətası', error: error.message });
+  }
+};
+
+// @desc    Toggle 2FA
+// @route   POST /api/auth/toggle-2fa
+// @access  Private
+exports.toggle2FA = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'İstifadəçi tapılmadı' });
+
+    user.isTwoFactorEnabled = !user.isTwoFactorEnabled;
+    await user.save();
+
+    res.json({ 
+      isTwoFactorEnabled: user.isTwoFactorEnabled,
+      message: user.isTwoFactorEnabled ? '2FA aktiv edildi' : '2FA deaktiv edildi' 
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server xətası' });
   }
 };

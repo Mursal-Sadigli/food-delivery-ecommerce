@@ -258,85 +258,126 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> with TickerPr
           SliverToBoxAdapter(
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  )
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Sifariş Proqresi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-                  const SizedBox(height: 16),
+                  const Row(
+                    children: [
+                      Icon(Icons.history, size: 20, color: Colors.grey),
+                      SizedBox(width: 8),
+                      Text(
+                        'Sifariş Tarixçəsi',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
                   ...List.generate(_steps.length, (index) {
                     final step = _steps[index];
                     final isCompleted = index <= _currentStep;
                     final isActive = index == _currentStep;
                     final isLast = index == _steps.length - 1;
 
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Timeline
-                        Column(
-                          children: [
-                            Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                color: isCompleted
-                                    ? Theme.of(context).colorScheme.primary
-                                    : Colors.grey.shade200,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                step['icon'] as IconData,
-                                size: 16,
-                                color: isCompleted ? Colors.white : Colors.grey.shade400,
-                              ),
-                            ),
-                            if (!isLast)
-                              Container(
-                                width: 2,
+                    return IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Timeline
+                          Column(
+                            children: [
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                width: 36,
                                 height: 36,
-                                color: isCompleted ? Theme.of(context).colorScheme.primary : Colors.grey.shade200,
+                                decoration: BoxDecoration(
+                                  color: isCompleted
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Colors.grey.shade100,
+                                  shape: BoxShape.circle,
+                                  boxShadow: isCompleted ? [
+                                    BoxShadow(
+                                      color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 4),
+                                    )
+                                  ] : null,
+                                ),
+                                child: Icon(
+                                  step['icon'] as IconData,
+                                  size: 18,
+                                  color: isCompleted ? Colors.white : Colors.grey.shade400,
+                                ),
                               ),
-                          ],
-                        ),
-                        const SizedBox(width: 14),
-                        // Mətn
-                        Expanded(
-                          child: Padding(
-                            padding: EdgeInsets.only(bottom: isLast ? 0 : 16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      step['title'] as String,
-                                      style: TextStyle(
-                                        fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-                                        fontSize: 14,
-                                        color: isCompleted ? Colors.black : Colors.grey,
-                                      ),
+                              if (!isLast)
+                                Expanded(
+                                  child: Container(
+                                    width: 3,
+                                    margin: const EdgeInsets.symmetric(vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: isCompleted ? Theme.of(context).colorScheme.primary : Colors.grey.shade200,
+                                      borderRadius: BorderRadius.circular(2),
                                     ),
-                                    if (isCompleted)
-                                      Text(step['time'] as String, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                                  ],
+                                  ),
                                 ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  step['subtitle'] as String,
-                                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                                ),
-                              ],
+                            ],
+                          ),
+                          const SizedBox(width: 16),
+                          // Mətn hissəsi
+                          Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.only(bottom: isLast ? 0 : 28),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        step['title'] as String,
+                                        style: TextStyle(
+                                          fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
+                                          fontSize: 15,
+                                          color: isCompleted ? Colors.black : Colors.grey.shade400,
+                                        ),
+                                      ),
+                                      if (isCompleted)
+                                        Text(
+                                          step['time'] as String,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.grey.shade500,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    step['subtitle'] as String,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: isCompleted ? Colors.grey.shade600 : Colors.grey.shade300,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     );
                   }),
                 ],

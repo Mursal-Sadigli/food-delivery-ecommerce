@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/wishlist_provider.dart';
 import '../providers/product_provider.dart';
+import 'package:lottie/lottie.dart';
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
@@ -28,11 +29,15 @@ class FavoritesScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.favorite_outline, size: 80, color: Colors.grey.shade400),
+                  Lottie.network(
+                    'https://lottie.host/3e75e61d-7975-433a-96e0-81822709219b/MvMvL5jN5W.json',
+                    width: 150,
+                    height: 150,
+                  ),
                   const SizedBox(height: 16),
                   const Text(
                     'Hələ heç bir yemək bəyənilməyib',
-                    style: TextStyle(fontSize: 18, color: Colors.black54),
+                    style: TextStyle(fontSize: 18, color: Colors.black54, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   const Text(

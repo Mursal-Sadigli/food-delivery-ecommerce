@@ -21,16 +21,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _isScheduled = false;
   DateTime? _scheduledDateTime;
 
-  final Color _purpleBg = const Color(0xFF3B1D8F);
+  final Color _accentColor = const Color(0xFF673AB7);
 
   void _processPayment() async {
     setState(() => _isProcessing = true);
     
-    if (_selectedMethod == 3) {
-      final wallet = Provider.of<WalletProvider>(context, listen: false);
-      final cart = Provider.of<CartProvider>(context, listen: false);
-      final total = cart.finalPrice + 8.0;
+    final cart = Provider.of<CartProvider>(context, listen: false);
+    final wallet = Provider.of<WalletProvider>(context, listen: false);
+    final total = cart.finalPrice + 8.0;
 
+    if (_selectedMethod == 3) {
       if (wallet.balance < total) {
         setState(() => _isProcessing = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -38,104 +38,138 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         );
         return;
       }
-      
       // Simulation: subtract from wallet
-      // In a real app, this would be a backend call
       await wallet.deposit(-total); 
     }
 
-    // Handle scheduled order
-    if (_isScheduled && _scheduledDateTime != null) {
-       // In real app, send _scheduledDateTime to backend
-       debugPrint('Sifariş planlandı: $_scheduledDateTime');
-    }
+    try {
+      // Real API call to create order
+      final response = await cart.createOrder(
+        shippingAddress: {
+          'address': 'Mərkəzi k., 45', // Mock address for demo
+          'city': 'Bakı',
+          'postalCode': 'AZ1000',
+          'country': 'Azərbaycan',
+        },
+        paymentMethod: _selectedMethod == 0 ? 'Kart' : (_selectedMethod == 1 ? 'Paypal' : 'Cüzdan'),
+        scheduledAt: _isScheduled ? _scheduledDateTime : null,
+      );
 
-    await Future.delayed(const Duration(seconds: 2));
-    setState(() => _isProcessing = false);
+      setState(() => _isProcessing = false);
 
-    if (mounted) {
-      Provider.of<CartProvider>(context, listen: false).clear();
-      _showSuccessPopup();
+      if (response != null && mounted) {
+        _showSuccessPopup();
+      }
+    } catch (e) {
+      setState(() => _isProcessing = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sifariş yaradılarkən xəta: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
   void _showSuccessPopup() {
-    showDialog(
+    showGeneralDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-        backgroundColor: Colors.white,
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-              Container(
-                width: 90,
-                height: 90,
+      barrierLabel: '',
+      transitionDuration: const Duration(milliseconds: 400),
+      pageBuilder: (ctx, anim1, anim2) => const SizedBox(),
+      transitionBuilder: (ctx, anim1, anim2, child) {
+        final curve = Curves.elasticOut.transform(anim1.value);
+        return Transform.scale(
+          scale: curve,
+          child: Opacity(
+            opacity: anim1.value,
+            child: Dialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+              elevation: 0,
+              backgroundColor: Colors.transparent,
+              child: Container(
+                padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
-                  color: _purpleBg,
-                  shape: BoxShape.circle,
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(32),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
                 ),
-                child: const Icon(Icons.check, color: Colors.white, size: 45),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Thank You For\nYour Order',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, height: 1.3),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Your Order Been Place Successfully!\nYou Can Track The Delivery In The\nOrder Section',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: Colors.grey, height: 1.5),
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                height: 54,
-                child: OutlinedButton(
-                  onPressed: () {
-                    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const MainScreen()), (route) => false);
-                  },
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    side: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  child: const Text('Back Home', style: TextStyle(color: Colors.black54, fontWeight: FontWeight.w600, fontSize: 16)),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Container(
+                          width: 70,
+                          height: 70,
+                          decoration: const BoxDecoration(
+                            color: Colors.green,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.check_rounded, color: Colors.white, size: 40),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Təşəkkür Edirik!',
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Sifarişiniz uğurla yerləşdirildi.\nTezliklə çatdırılacaq.',
+                      style: TextStyle(fontSize: 14, color: Colors.grey.shade600, height: 1.5),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 32),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const MainScreen()), (route) => false);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _accentColor,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          elevation: 0,
+                        ),
+                        child: const Text('Ana Səhifəyə Qayıt', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const OrderTrackingScreen()));
+                      },
+                      child: Text(
+                        'Sifarişi İzlə',
+                        style: TextStyle(color: _accentColor, fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 54,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const OrderTrackingScreen()));
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _purpleBg,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    elevation: 0,
-                  ),
-                  child: const Text('Track Your Order', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'You Can Order Something Else',
-                style: TextStyle(fontSize: 13, color: Colors.grey, fontWeight: FontWeight.w500),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
-    ),
-  );
-}
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -176,52 +210,166 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Purple Credit Card Map (Like the image)
+              // Premium Credit Card (Glassmorphism + Mesh Gradient)
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(24),
+                height: 220,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF5D3EBC), Color(0xFF3B1D8F)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [BoxShadow(color: _purpleBg.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10))],
+                  borderRadius: BorderRadius.circular(32),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _accentColor.withOpacity(0.2),
+                      blurRadius: 30,
+                      offset: const Offset(0, 15),
+                    ),
+                  ],
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('David Michael', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
-                        Row(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(32),
+                  child: Stack(
+                    children: [
+                      // Mesh Gradient Background
+                      Positioned.fill(
+                        child: Container(color: const Color(0xFF0F0F0F)),
+                      ),
+                      Positioned(
+                        top: -50,
+                        right: -50,
+                        child: Container(
+                          width: 200,
+                          height: 200,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              colors: [
+                                _accentColor.withOpacity(0.6),
+                                _accentColor.withOpacity(0),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: -100,
+                        left: -50,
+                        child: Container(
+                          width: 250,
+                          height: 250,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              colors: [
+                                const Color(0xFFE91E63).withOpacity(0.4),
+                                const Color(0xFFE91E63).withOpacity(0),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Glass Layer
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(32),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.1),
+                              width: 1.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Card Content
+                      Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Container(width: 14, height: 14, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle)),
-                            Transform.translate(
-                              offset: const Offset(-6, 0),
-                              child: Container(width: 14, height: 14, decoration: const BoxDecoration(color: Colors.orange, shape: BoxShape.circle)),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Mürsal Sadiqov',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                                Image.network(
+                                  'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png',
+                                  height: 35,
+                                  errorBuilder: (_, __, ___) => const Icon(Icons.credit_card, color: Colors.white),
+                                ),
+                              ],
+                            ),
+                            const Text(
+                              '****   ****   ****   7852',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 2,
+                              ),
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Etibarlılıq'.toUpperCase(),
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.5),
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 1,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    const Text(
+                                      '12/28',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      'CVV'.toUpperCase(),
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.5),
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 1,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    const Text(
+                                      '***',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-                    const Text(
-                      '4563   1122   4695   7852',
-                      style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 1.2),
-                    ),
-                    const SizedBox(height: 32),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _cardLabelVal('Exp Date', '16/24'),
-                        _cardLabelVal('CVC Number', '972'),
-                        const Text('Master Card', style: TextStyle(color: Colors.white, fontSize: 12)),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 32),
@@ -229,15 +377,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               // Choose Payment Method horizontally
               Text('Choose Payment Method', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)),
               const SizedBox(height: 16),
-              Row(
+               Row(
                 children: [
-                  Expanded(child: _paymentMethodChip(0, Icons.circle, isMastercard: true)),
-                  const SizedBox(width: 8),
-                  Expanded(child: _paymentMethodChip(1, Icons.paypal, color: Colors.blue)),
-                  const SizedBox(width: 8),
-                  Expanded(child: _paymentMethodChip(2, Icons.apple, color: Colors.black)),
-                  const SizedBox(width: 8),
-                  Expanded(child: _paymentMethodChip(3, Icons.account_balance_wallet, color: const Color(0xFFFF5722))),
+                  Expanded(child: _paymentMethodChip(0, Icons.credit_card_rounded, label: 'Kart')),
+                  const SizedBox(width: 12),
+                  Expanded(child: _paymentMethodChip(1, Icons.paypal_rounded, color: const Color(0xFF003087), label: 'Paypal')),
+                  const SizedBox(width: 12),
+                  Expanded(child: _paymentMethodChip(3, Icons.wallet_rounded, color: const Color(0xFFFF9800), label: 'Cüzdan')),
                 ],
               ),
               const SizedBox(height: 16),
@@ -277,8 +423,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 child: Column(
                   children: [
                     SwitchListTile(
-                      title: const Text('Gələcək üçün planla', style: TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: const Text('Sifarişin nə vaxt gəlməsini seçin'),
+                      title: const Text('Gələcək üçün planla', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                      subtitle: Text('Sifarişin nə vaxt gəlməsini seçin', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
                       value: _isScheduled,
                       onChanged: (val) {
                         setState(() {
@@ -289,7 +435,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         });
                       },
                       contentPadding: EdgeInsets.zero,
-                      activeColor: _purpleBg,
+                      activeColor: _accentColor,
                     ),
                     if (_isScheduled) ...[
                       const Divider(),
@@ -329,53 +475,52 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               Text('Promo Code', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)),
               const SizedBox(height: 16),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.grey[800] : Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(20),
+                  color: isDark ? Colors.grey[900] : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(24),
                 ),
                 child: Row(
                   children: [
+                    const SizedBox(width: 20),
+                    Icon(Icons.local_offer_outlined, color: Colors.grey.shade500, size: 20),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: TextField(
                         controller: _promoController,
-                        style: TextStyle(color: isDark ? Colors.white : Colors.black),
+                        style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 15),
                         decoration: InputDecoration(
-                          hintText: 'Promo code',
-                          hintStyle: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey),
+                          hintText: 'Promo kodunuz',
+                          hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 15),
                           border: InputBorder.none,
-                          suffixIcon: cart.appliedCoupon != null 
-                            ? IconButton(
-                                icon: const Icon(Icons.clear, color: Colors.red, size: 20),
-                                onPressed: () {
-                                  cart.removeCoupon();
-                                  _promoController.clear();
-                                },
-                              )
-                            : null,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 20),
                         ),
                       ),
                     ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: cart.appliedCoupon != null ? Colors.green : Colors.black87,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: cart.appliedCoupon != null ? Colors.green : Colors.black,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        ),
+                        onPressed: cart.appliedCoupon != null ? null : () async {
+                          if (_promoController.text.isEmpty) return;
+                          final error = await cart.applyPromoCode(_promoController.text);
+                          if (error != null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(error), backgroundColor: Colors.red),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Promo kod tətbiq edildi!'), backgroundColor: Colors.green),
+                            );
+                          }
+                        },
+                        child: Text(cart.appliedCoupon != null ? 'Tətbiq olundu' : 'Tətbiq et'),
                       ),
-                      onPressed: cart.appliedCoupon != null ? null : () async {
-                        if (_promoController.text.isEmpty) return;
-                        final error = await cart.applyPromoCode(_promoController.text);
-                        if (error != null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(error), backgroundColor: Colors.red),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Promo kod tətbiq edildi!'), backgroundColor: Colors.green),
-                          );
-                        }
-                      },
-                      child: Text(cart.appliedCoupon != null ? 'Applied' : 'Apply', style: const TextStyle(color: Colors.white)),
                     )
                   ],
                 ),
@@ -420,21 +565,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Payment Button
               SizedBox(
                 width: double.infinity,
-                height: 58,
+                height: 64,
                 child: ElevatedButton(
                   onPressed: _isProcessing ? null : _processPayment,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _purpleBg,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                    elevation: 5,
-                    shadowColor: _purpleBg.withOpacity(0.5),
+                    backgroundColor: _accentColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    elevation: 8,
+                    shadowColor: _accentColor.withOpacity(0.4),
                   ),
                   child: _isProcessing
                       ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Text('Payment', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                      : const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text('Ödənişi Tamamla', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                            SizedBox(width: 12),
+                            Icon(Icons.arrow_forward_rounded, size: 20),
+                          ],
+                        ),
                 ),
               ),
               const SizedBox(height: 30),
@@ -445,44 +597,43 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _cardLabelVal(String label, String val) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 10)),
-        const SizedBox(height: 4),
-        Text(val, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-      ],
-    );
-  }
-
-  Widget _paymentMethodChip(int index, IconData icon, {Color? color, bool isMastercard = false}) {
+  Widget _paymentMethodChip(int index, IconData icon, {Color? color, required String label}) {
     final isSelected = _selectedMethod == index;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
       onTap: () => setState(() => _selectedMethod = index),
-      child: Container(
-        height: 50,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: isSelected ? _purpleBg : (isDark ? Colors.grey[800] : Colors.white),
-          borderRadius: BorderRadius.circular(16),
-          border: isSelected ? null : Border.all(color: isDark ? Colors.grey[700]! : Colors.grey.shade300),
-          boxShadow: isSelected ? [BoxShadow(color: _purpleBg.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 4))] : [],
+          color: isSelected ? _accentColor : (isDark ? Colors.grey[900] : Colors.white),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isSelected ? _accentColor : (isDark ? Colors.grey[800]! : Colors.grey.shade200),
+            width: 1.5,
+          ),
+          boxShadow: isSelected 
+              ? [BoxShadow(color: _accentColor.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))] 
+              : [],
         ),
-        child: Center(
-          child: isMastercard
-              ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(width: 14, height: 14, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle)),
-                    Transform.translate(
-                      offset: const Offset(-6, 0),
-                      child: Container(width: 14, height: 14, decoration: BoxDecoration(color: Colors.orange.withOpacity(0.9), shape: BoxShape.circle)),
-                    ),
-                  ],
-                )
-              : Icon(icon, color: isSelected ? Colors.white : color),
+        child: Column(
+          children: [
+            Icon(
+              icon, 
+              color: isSelected ? Colors.white : (color ?? (isDark ? Colors.white70 : Colors.black54)),
+              size: 28,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black54),
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
     );

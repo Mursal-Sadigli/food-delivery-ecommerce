@@ -13,9 +13,12 @@ import 'providers/biometric_provider.dart';
 import 'providers/notification_provider.dart';
 import 'screens/splash_screen.dart';
 
+import 'services/notification_service.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
+  await NotificationService().init();
 
   runApp(
     EasyLocalization(
@@ -61,6 +64,12 @@ class SmartMarketApp extends StatelessWidget {
             ),
             fontFamily: GoogleFonts.inter().fontFamily,
             useMaterial3: true,
+            pageTransitionsTheme: const PageTransitionsTheme(
+              builders: {
+                TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+                TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+              },
+            ),
           ),
           darkTheme: ThemeData(
             colorScheme: ColorScheme.fromSeed(
@@ -72,6 +81,12 @@ class SmartMarketApp extends StatelessWidget {
             useMaterial3: true,
             scaffoldBackgroundColor: const Color(0xFF121212),
             cardColor: const Color(0xFF1E1E1E),
+            pageTransitionsTheme: const PageTransitionsTheme(
+              builders: {
+                TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+                TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+              },
+            ),
           ),
           themeMode: themeProvider.themeMode,
           home: const SplashScreen(),

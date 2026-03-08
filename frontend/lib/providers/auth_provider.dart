@@ -13,12 +13,16 @@ class AuthProvider with ChangeNotifier {
   Map<String, dynamic>? _user;
   String? _socialLoginError;
   String? _authError;
+  bool _twoFactorRequired = false;
+  String? _twoFactorEmail;
 
   bool get isAuthenticated => _token != null;
   bool get isLoading => _isLoading;
   Map<String, dynamic>? get user => _user;
   String? get socialLoginError => _socialLoginError;
   String? get authError => _authError;
+  bool get twoFactorRequired => _twoFactorRequired;
+  String? get twoFactorEmail => _twoFactorEmail;
 
   final ApiService _apiService = ApiService();
 
@@ -47,7 +51,7 @@ class AuthProvider with ChangeNotifier {
     _authError = 'Xəta baş verdi. Zəhmət olmasa yenidən yoxlayın.';
   }
 
-  Future<bool> register(String name, String email, String password) async {
+  Future<bool> register(String name, String email, String password, {String? referralCode}) async {
     _isLoading = true;
     _authError = null;
     notifyListeners();
@@ -57,6 +61,7 @@ class AuthProvider with ChangeNotifier {
         'name': name,
         'email': email,
         'password': password,
+        'referralCode': referralCode,
       });
 
       if (response['token'] != null) {
@@ -92,8 +97,17 @@ class AuthProvider with ChangeNotifier {
         'password': password,
       });
 
+      if (response['twoFactorRequired'] == true) {
+        _twoFactorRequired = true;
+        _twoFactorEmail = response['email'];
+        _isLoading = false;
+        notifyListeners();
+        return false; // Will trigger navigation in UI
+      }
+
       if (response['token'] != null) {
         _token = response['token'];
+        _twoFactorRequired = false;
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', _token!);
         _isLoading = false;
@@ -277,6 +291,59 @@ class AuthProvider with ChangeNotifier {
       return response != null && response['message'] != null;
     } catch (e) {
       _extractAndSetError(e);
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> verify2FA(String email, String code) async {
+    _isLoading = true;
+    _authError = null;
+    notifyListeners();
+    try {
+      final response = await _apiService.post('/auth/verify-2fa', {
+        'email': email,
+        'code': code,
+      });
+
+      if (response['token'] != null) {
+        _token = response['token'];
+        _twoFactorRequired = false;
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', _token!);
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      }
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _extractAndSetError(e);
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> toggle2FA() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final response = await _apiService.post('/auth/toggle-2fa', {});
+      if (response != null && response['isTwoFactorEnabled'] != null) {
+        if (_user != null) {
+          _user!['isTwoFactorEnabled'] = response['isTwoFactorEnabled'];
+        }
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      }
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
       _isLoading = false;
       notifyListeners();
       return false;

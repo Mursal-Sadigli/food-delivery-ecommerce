@@ -8,8 +8,8 @@ require('dotenv').config();
 const app = express();
 
 // Middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cors());
 app.use(helmet());
 app.use(morgan('dev'));
@@ -25,6 +25,7 @@ const couponRoutes = require('./routes/couponRoutes');
 const referralRoutes = require('./routes/referralRoutes');
 const subscriptionRoutes = require('./routes/subscriptionRoutes');
 const walletRoutes = require('./routes/walletRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 // Routing (əsas səhifə)
 app.use('/api/auth', authRoutes);
@@ -37,6 +38,7 @@ app.use('/api/coupons', couponRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/referral', referralRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
+app.use('/api/admin', adminRoutes);
 app.get('/', (req, res) => {
   res.send('SmartMarket API işləyir...');
 });

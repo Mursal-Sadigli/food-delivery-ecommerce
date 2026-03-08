@@ -1,8 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../widgets/product_card.dart';
 import 'package:provider/provider.dart';
 import '../providers/cart_provider.dart';
 import '../providers/product_provider.dart';
 import '../widgets/custom_button.dart';
+import '../providers/auth_provider.dart';
+import 'add_product_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -26,6 +30,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   // Variations State
   int _selectedSizeIndex = 0;
   List<int> _selectedAddons = [];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<ProductProvider>(context, listen: false).fetchRecommendations(
+        category: widget.product['category'],
+        exclude: widget.product['_id'],
+      );
+    });
+  }
 
   // Calculate dynamic price
   double get _currentPrice {
@@ -107,6 +122,38 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     }
   }
 
+  void _showDeleteDialog() {
+    final productProvider = Provider.of<ProductProvider>(context, listen: false);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Məhsulu sil'),
+        content: const Text('Bu məhsulu silmək istədiyinizə əminsiniz?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Ləğv et')),
+          TextButton(
+            onPressed: () async {
+              final success = await productProvider.deleteProduct(widget.product['_id']);
+              if (mounted) {
+                Navigator.pop(ctx); // Dialogu bağla (dialog context-i ilə)
+                if (success) {
+                  navigator.pop(); // Detal ekranını bağla (əvvəlcədən alınmış navigator ilə)
+                  scaffoldMessenger.showSnackBar(
+                    const SnackBar(content: Text('Məhsul silindi'), backgroundColor: Colors.green),
+                  );
+                }
+              }
+            },
+            child: const Text('Sil', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _reviewController.dispose();
@@ -117,8 +164,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   Widget build(BuildContext context) {
     // Şəkil URL-i yoxlayırıq və əgər relative /images/... isə mütləq formaya salırıq
     String rawImageUrl = widget.product['image']?.toString() ?? '';
-    String imageUrl = rawImageUrl.isNotEmpty && !rawImageUrl.startsWith('http') 
-        ? 'http://127.0.0.1:5000$rawImageUrl' 
+    String imageUrl = rawImageUrl.isNotEmpty && !rawImageUrl.startsWith('http') && !rawImageUrl.startsWith('data:image')
+        ? 'http://localhost:5000$rawImageUrl' 
         : rawImageUrl;
 
     final title = widget.product['name']?.toString() ?? 'Yemək';
@@ -129,6 +176,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final List<dynamic> reviews = widget.product['reviews'] ?? [];
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final authProvider = Provider.of<AuthProvider>(context);
+    final productProvider = Provider.of<ProductProvider>(context);
+    final currentUser = authProvider.user;
+    final bool isOwner = currentUser != null && 
+                        widget.product['user'] != null && 
+                        (currentUser['_id'] == widget.product['user'] || 
+                         (widget.product['user'] is Map && currentUser['_id'] == widget.product['user']['_id']));
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -137,6 +191,25 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         backgroundColor: Colors.transparent,
         iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black),
         actions: [
+          if (isOwner) ...[
+            IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddProductScreen(productToEdit: widget.product),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.edit_outlined, color: Colors.blue),
+              tooltip: 'Redaktə et',
+            ),
+            IconButton(
+              onPressed: _showDeleteDialog,
+              icon: const Icon(Icons.delete_outline, color: Colors.red),
+              tooltip: 'Sil',
+            ),
+          ],
           IconButton(
             onPressed: () {
               Share.share('Bu ləzzətli yeməyə bax! ${widget.product['name']}\nQiymət: ${widget.product['price']} ₼\nSmartFood-dan sifariş et!');
@@ -155,18 +228,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             Container(
               height: 350,
               width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                image: imageUrl.isNotEmpty
-                    ? DecorationImage(
-                        image: NetworkImage(imageUrl),
-                        fit: BoxFit.cover,
-                      )
-                    : null,
-              ),
+              color: Colors.grey.shade100,
               child: imageUrl.isEmpty
                   ? const Center(child: Icon(Icons.fastfood, size: 100, color: Colors.white))
-                  : null,
+                  : (imageUrl.startsWith('data:image')
+                      ? Image.memory(
+                          base64Decode(imageUrl.split(',').last),
+                          fit: BoxFit.cover,
+                        )
+                      : Image.network(
+                          imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image, size: 100, color: Colors.grey)),
+                        )),
             ),
             Padding(
               padding: const EdgeInsets.all(24.0),
@@ -489,6 +563,40 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         : const Text('Rəyi Göndər', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                     ),
                   ),
+                  
+                  const Divider(height: 60, thickness: 1),
+
+                  // RECOMMENDATIONS SECTION
+                  if (productProvider.recommendations.isNotEmpty) ...[
+                    const Text(
+                      'Sizə maraqlı ola bilər',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: 260,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: productProvider.recommendations.length,
+                        itemBuilder: (context, index) {
+                          final prod = productProvider.recommendations[index];
+                          return Container(
+                            width: 170,
+                            margin: const EdgeInsets.only(right: 16),
+                            child: ProductCard(
+                              product: prod,
+                              onAddToCart: () {
+                                Provider.of<CartProvider>(context, listen: false).addItem(
+                                  prod['_id'], prod['name'], prod['price'].toString(), prod['image']
+                                );
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                  ],
                 ],
               ),
             ),
@@ -524,6 +632,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
              // Add single item with the total variations quantity, or loop 
              cartProvider.addItem(
+               widget.product['_id'],
                title, 
                (_currentPrice / _quantity).toStringAsFixed(2), // pass unit price of variation
                imageUrl,

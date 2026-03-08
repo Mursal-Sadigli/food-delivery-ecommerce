@@ -13,7 +13,11 @@ import 'chat_screen.dart';
 import 'wallet_screen.dart';
 import 'referral_screen.dart';
 import 'pro_subscription_screen.dart';
+import 'my_products_screen.dart';
+import 'loyalty_dashboard_screen.dart';
+import 'admin_dashboard_screen.dart';
 import '../providers/biometric_provider.dart';
+import '../providers/theme_provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -170,9 +174,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                 child: Text('Ümumi', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
               ),
+
+              if (user != null && user['role'] == 'admin')
+                _buidlMenuTile(Icons.admin_panel_settings_outlined, 'Admin Dashboard', () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminDashboardScreen()));
+                }, isDark),
               
               _buidlMenuTile(Icons.shopping_bag_outlined, 'Sifarişlərim', () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const OrdersScreen()));
+              }, isDark),
+              _buidlMenuTile(Icons.inventory_2_outlined, 'Mənim Elanlarım', () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProductsScreen()));
               }, isDark),
               _buidlMenuTile(Icons.location_on_outlined, 'Çatdırılma Ünvanları', () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const AddressesScreen()));
@@ -189,6 +201,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buidlMenuTile(Icons.card_giftcard_outlined, 'Dostlarını Dəvət Et', () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const ReferralScreen()));
               }, isDark),
+              _buidlMenuTile(Icons.stars_rounded, 'SmartXallar Dashboard', () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const LoyaltyDashboardScreen()));
+              }, isDark),
               
               const SizedBox(height: 8),
               Consumer<BiometricProvider>(
@@ -204,6 +219,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     contentPadding: const EdgeInsets.symmetric(horizontal: 24),
                   );
                 },
+              ),
+              
+              SwitchListTile(
+                secondary: Icon(Icons.security, color: isDark ? Colors.white70 : Colors.black87),
+                title: Text('İki-Faktorlu Giriş (2FA)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: isDark ? Colors.white : Colors.black87)),
+                subtitle: const Text('Email ilə təhlükəsiz giriş', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                value: user?['isTwoFactorEnabled'] ?? false,
+                activeColor: Colors.green,
+                onChanged: (val) async {
+                  final result = await authProvider.toggle2FA();
+                  if (mounted && !result) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Xəta baş verdi'), backgroundColor: Colors.redAccent),
+                    );
+                  }
+                },
+                contentPadding: const EdgeInsets.symmetric(horizontal: 24),
               ),
 
               
@@ -227,6 +259,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               }, isDark),
               _buidlMenuTile(Icons.language_outlined, 'Dil (${context.locale.languageCode.toUpperCase()})', () {
                 _showLanguageSelector(context);
+              }, isDark),
+              _buidlMenuTile(Icons.palette_outlined, 'Mövzu (${_getThemeName(context)})', () {
+                _showThemeSelector(context);
               }, isDark),
               
               const SizedBox(height: 32),
@@ -303,6 +338,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
         );
+      },
+    );
+  }
+
+  String _getThemeName(BuildContext context) {
+    final theme = Provider.of<ThemeProvider>(context, listen: false).themeMode;
+    switch (theme) {
+      case ThemeMode.system: return 'Sistem';
+      case ThemeMode.light: return 'Açıq';
+      case ThemeMode.dark: return 'Tünd';
+    }
+  }
+
+  void _showThemeSelector(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) {
+        final themeProvider = Provider.of<ThemeProvider>(context);
+        return Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Mövzu Seçin', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 20),
+              _buildThemeTile(context, 'Sistem', ThemeMode.system, themeProvider),
+              _buildThemeTile(context, 'Açıq', ThemeMode.light, themeProvider),
+              _buildThemeTile(context, 'Tünd', ThemeMode.dark, themeProvider),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildThemeTile(BuildContext context, String name, ThemeMode mode, ThemeProvider provider) {
+    bool isSelected = provider.themeMode == mode;
+    return ListTile(
+      title: Text(name, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+      trailing: isSelected ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
+      onTap: () {
+        provider.setThemeMode(mode);
+        Navigator.pop(context);
       },
     );
   }

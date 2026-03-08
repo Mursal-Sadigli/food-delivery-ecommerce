@@ -4,7 +4,21 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   // Windows Desktop proqramları üçün
-  static const String baseUrl = 'http://127.0.0.1:5000/api';
+  static const String baseUrl = 'http://localhost:5000/api';
+
+  Uri _buildUri(String endpoint) {
+    // baseUrl və endpoint-i birləşdirərkən boşluqları və slash-ləri yoxla
+    String host = baseUrl.trim();
+    if (host.endsWith('/')) {
+      host = host.substring(0, host.length - 1);
+    }
+    String path = endpoint.trim();
+    if (!path.startsWith('/')) {
+      path = '/$path';
+    }
+    final fullUrl = '$host$path'.trim();
+    return Uri.parse(fullUrl);
+  }
 
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -13,9 +27,11 @@ class ApiService {
 
   Future<dynamic> post(String endpoint, Map<String, dynamic> data) async {
     final token = await getToken();
+    final uri = _buildUri(endpoint);
     try {
+      print('HTTP POST: $uri');
       final response = await http.post(
-        Uri.parse('$baseUrl$endpoint'),
+        uri,
         headers: {
           'Content-Type': 'application/json',
           if (token != null) 'Authorization': 'Bearer $token',
@@ -23,59 +39,68 @@ class ApiService {
         body: jsonEncode(data),
       );
       print('API Response STATUS $endpoint: ${response.statusCode}');
-      print('API Response BODY $endpoint: ${response.body}');
       if (response.statusCode >= 400) {
         throw Exception('API Error: ${response.statusCode} - ${response.body}');
       }
       return jsonDecode(response.body);
     } catch (e) {
-      print('HTTP POST ERROR: $e');
+      print('HTTP POST ERROR [$uri]: $e');
       rethrow;
     }
   }
 
   Future<dynamic> get(String endpoint) async {
     final token = await getToken();
-    final response = await http.get(
-      Uri.parse('$baseUrl$endpoint'),
-      headers: {
-        'Content-Type': 'application/json',
-        if (token != null) 'Authorization': 'Bearer $token',
-      },
-    );
-    if (response.statusCode >= 400) {
-      throw Exception('API Error: ${response.statusCode} - ${response.body}');
+    final uri = _buildUri(endpoint);
+    try {
+      print('HTTP GET: $uri');
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode >= 400) {
+        throw Exception('API Error: ${response.statusCode} - ${response.body}');
+      }
+      return jsonDecode(response.body);
+    } catch (e) {
+      print('HTTP GET ERROR [$uri]: $e');
+      rethrow;
     }
-    return jsonDecode(response.body);
   }
 
   Future<dynamic> delete(String endpoint) async {
     final token = await getToken();
+    final uri = _buildUri(endpoint);
     try {
+      print('HTTP DELETE: $uri');
       final response = await http.delete(
-        Uri.parse('$baseUrl$endpoint'),
+        uri,
         headers: {
           'Content-Type': 'application/json',
           if (token != null) 'Authorization': 'Bearer $token',
         },
       );
       print('API Response STATUS $endpoint: ${response.statusCode}');
-      print('API Response BODY $endpoint: ${response.body}');
       if (response.statusCode >= 400) {
         throw Exception('API Error: ${response.statusCode} - ${response.body}');
       }
       return jsonDecode(response.body);
     } catch (e) {
-      print('HTTP DELETE ERROR: $e');
+      print('HTTP DELETE ERROR [$uri]: $e');
       rethrow;
     }
   }
 
   Future<dynamic> put(String endpoint, Map<String, dynamic> data) async {
     final token = await getToken();
+    final uri = _buildUri(endpoint);
     try {
+      print('HTTP PUT: $uri');
       final response = await http.put(
-        Uri.parse('$baseUrl$endpoint'),
+        uri,
         headers: {
           'Content-Type': 'application/json',
           if (token != null) 'Authorization': 'Bearer $token',
@@ -87,7 +112,7 @@ class ApiService {
       }
       return jsonDecode(response.body);
     } catch (e) {
-      print('HTTP PUT ERROR: $e');
+      print('HTTP PUT ERROR [$uri]: $e');
       rethrow;
     }
   }

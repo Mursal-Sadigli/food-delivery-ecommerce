@@ -16,6 +16,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _referralController = TextEditingController();
   bool _agreeTerms = false;
 
   void _register() async {
@@ -34,6 +35,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _nameController.text.trim(),
       _emailController.text.trim(),
       _passwordController.text.trim(),
+      referralCode: _referralController.text.trim().isEmpty ? null : _referralController.text.trim(),
     );
 
     if (success) {
@@ -159,6 +161,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       controller: _passwordController,
                       isPassword: true,
                       prefixIcon: Icons.lock_outline,
+                    ),
+                    const SizedBox(height: 18),
+
+                    // Referral Code
+                    CustomTextField(
+                      label: 'Referral Code (Optional)',
+                      hint: 'SMART123',
+                      controller: _referralController,
+                      prefixIcon: Icons.card_giftcard,
                     ),
                     const SizedBox(height: 12),
 

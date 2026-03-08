@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../providers/chat_provider.dart';
 import '../providers/auth_provider.dart';
 
@@ -40,71 +41,119 @@ class _ChatScreenState extends State<ChatScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text('Dəstək Xidməti', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Column(
+          children: [
+            const Text('Dəstək Xidməti', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                ),
+                const SizedBox(width: 4),
+                const Text('Onlayn', style: TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.w400)),
+              ],
+            ),
+          ],
+        ),
         centerTitle: true,
         elevation: 0,
-        backgroundColor: Colors.transparent,
+        backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
+        foregroundColor: isDark ? Colors.white : Colors.black,
       ),
       body: Column(
         children: [
           Expanded(
             child: chatProvider.isLoading && chatProvider.messages.isEmpty
-                ? const Center(child: CircularProgressIndicator())
+                ? Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary))
                 : ListView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                     itemCount: chatProvider.messages.length,
                     itemBuilder: (context, index) {
                       final msg = chatProvider.messages[index];
                       final isMe = msg['sender'] == authProvider.user?['_id'];
+                      final time = msg['createdAt'] != null 
+                          ? DateFormat('HH:mm').format(DateTime.parse(msg['createdAt']))
+                          : DateFormat('HH:mm').format(DateTime.now());
                       
-                      return Align(
-                        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          constraints: BoxConstraints(
-                            maxWidth: MediaQuery.of(context).size.width * 0.75,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isMe 
-                                ? Theme.of(context).colorScheme.primary 
-                                : (isDark ? Colors.grey[800] : Colors.grey[200]),
-                            borderRadius: BorderRadius.only(
-                              topLeft: const Radius.circular(16),
-                              topRight: const Radius.circular(16),
-                              bottomLeft: Radius.circular(isMe ? 16 : 0),
-                              bottomRight: Radius.circular(isMe ? 0 : 16),
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Column(
+                          crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                              constraints: BoxConstraints(
+                                maxWidth: MediaQuery.of(context).size.width * 0.75,
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: isMe 
+                                    ? const LinearGradient(
+                                        colors: [Color(0xFFFF5722), Color(0xFFFF8A65)],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      )
+                                    : LinearGradient(
+                                        colors: isDark 
+                                            ? [const Color(0xFF2C2C2E), const Color(0xFF3A3A3C)]
+                                            : [const Color(0xFFE9E9EB), const Color(0xFFF2F2F7)],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ),
+                                borderRadius: BorderRadius.only(
+                                  topLeft: const Radius.circular(20),
+                                  topRight: const Radius.circular(20),
+                                  bottomLeft: Radius.circular(isMe ? 20 : 4),
+                                  bottomRight: Radius.circular(isMe ? 4 : 20),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 5,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Text(
                                 msg['content'],
                                 style: TextStyle(
                                   color: isMe ? Colors.white : (isDark ? Colors.white : Colors.black87),
                                   fontSize: 15,
+                                  height: 1.3,
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              time,
+                              style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                            ),
+                          ],
                         ),
                       );
                     },
                   ),
           ),
           
-          // Giriş sahəsi
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.only(
+              left: 16, 
+              right: 16, 
+              top: 12, 
+              bottom: MediaQuery.of(context).padding.bottom + 12
+            ),
             decoration: BoxDecoration(
-              color: Theme.of(context).scaffoldBackgroundColor,
+              color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 20,
                   offset: const Offset(0, -5),
                 ),
               ],
@@ -113,15 +162,17 @@ class _ChatScreenState extends State<ChatScreen> {
               children: [
                 Expanded(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.grey[800] : Colors.grey[100],
-                      borderRadius: BorderRadius.circular(24),
+                      color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF2F2F7),
+                      borderRadius: BorderRadius.circular(28),
                     ),
                     child: TextField(
                       controller: _messageController,
+                      style: TextStyle(color: isDark ? Colors.white : Colors.black87),
                       decoration: const InputDecoration(
                         hintText: 'Mesajınızı yazın...',
+                        hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
                         border: InputBorder.none,
                       ),
                       onSubmitted: (val) => _sendMessage(),
@@ -131,13 +182,21 @@ class _ChatScreenState extends State<ChatScreen> {
                 const SizedBox(width: 12),
                 GestureDetector(
                   onTap: _sendMessage,
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.primary,
                       shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                    child: const Icon(Icons.send, color: Colors.white, size: 20),
+                    child: const Icon(Icons.send_rounded, color: Colors.white, size: 22),
                   ),
                 ),
               ],
@@ -155,7 +214,6 @@ class _ChatScreenState extends State<ChatScreen> {
         .sendMessage(_messageController.text.trim());
     _messageController.clear();
     
-    // Scroll to bottom after sending
     Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
   }
 }

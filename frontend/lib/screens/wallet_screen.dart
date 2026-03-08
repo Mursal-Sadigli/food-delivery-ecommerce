@@ -177,18 +177,35 @@ class _WalletScreenState extends State<WalletScreen> {
   }
 
   void _showDepositDialog(BuildContext context) {
-    final controller = TextEditingController();
+    final controller = TextEditingController(text: '10.0');
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: const Text('Balans Artır'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            hintText: 'Məbləğ (₼)',
-            suffixText: '₼',
-          ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Balansınızı artırmaq üçün məbləğ daxil edin.', style: TextStyle(fontSize: 14, color: Colors.grey)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                hintText: 'Məbləğ (₼)',
+                suffixText: '₼',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [10, 20, 50].map((amt) => ActionChip(
+                label: Text('$amt ₼'),
+                onPressed: () => controller.text = amt.toString(),
+              )).toList(),
+            ),
+          ],
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Ləğv et')),
@@ -205,6 +222,7 @@ class _WalletScreenState extends State<WalletScreen> {
                 }
               }
             },
+            style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
             child: const Text('Artır'),
           ),
         ],

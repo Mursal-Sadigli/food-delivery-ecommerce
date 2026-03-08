@@ -3,6 +3,7 @@ import '../services/api_service.dart';
 
 class CartItem {
   final String id; // unique id generated from name + variations
+  final String productId; // Real product ID from MongoDB
   final String name;
   final String price;
   final String image;
@@ -12,6 +13,7 @@ class CartItem {
 
   CartItem({
     required this.id,
+    required this.productId,
     required this.name,
     required this.price,
     required this.image,
@@ -58,7 +60,7 @@ class CartProvider with ChangeNotifier {
   }
 
 
-  void addItem(String name, String price, String image, {int quantity = 1, String? size, String? addons}) {
+  void addItem(String productId, String name, String price, String image, {int quantity = 1, String? size, String? addons}) {
     // Generate a unique ID based on name + variations to avoid merging e.g. a Small Pizza with a Large Pizza
     final uniqueId = '${name}_${size ?? ''}_${addons ?? ''}';
     final existingIndex = _items.indexWhere((item) => item.id == uniqueId);
@@ -68,6 +70,7 @@ class CartProvider with ChangeNotifier {
     } else {
       _items.add(CartItem(
         id: uniqueId, 
+        productId: productId,
         name: name, 
         price: price, 
         image: image, 
@@ -130,5 +133,41 @@ class CartProvider with ChangeNotifier {
   void removeCoupon() {
     _appliedCoupon = null;
     notifyListeners();
+  }
+
+  // Create Order in backend
+  Future<Map<String, dynamic>?> createOrder({
+    required Map<String, dynamic> shippingAddress,
+    required String paymentMethod,
+    DateTime? scheduledAt,
+  }) async {
+    try {
+      final orderItems = _items.map((item) => {
+        'name': item.name,
+        'qty': item.quantity,
+        'image': item.image,
+        'price': double.tryParse(item.price) ?? 0.0,
+        'product': item.productId,
+      }).toList();
+
+      final response = await _apiService.post('/orders', {
+        'orderItems': orderItems,
+        'shippingAddress': shippingAddress,
+        'paymentMethod': paymentMethod,
+        'itemsPrice': finalPrice,
+        'shippingPrice': 8.0, // Default shipping price
+        'totalPrice': finalPrice + 8.0,
+        'scheduledAt': scheduledAt?.toIso8601String(),
+      });
+
+      if (response != null) {
+        clear();
+        return response;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Sifariş yaradılarkən xəta: $e');
+      rethrow;
+    }
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -9,8 +10,9 @@ import '../providers/theme_provider.dart';
 import '../widgets/product_card.dart';
 import '../widgets/voice_search_widget.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'notifications_screen.dart';
+import 'dart:async';
+import '../widgets/countdown_timer.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -52,7 +54,14 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<ProductProvider>(context, listen: false).fetchProducts();
+      Provider.of<ProductProvider>(context, listen: false).fetchFlashSales();
     });
+  }
+
+  Widget _buildCountdownTimer(String? endDateStr) {
+    if (endDateStr == null) return const SizedBox.shrink();
+    
+    return CountdownTimerWidget(endDate: DateTime.parse(endDateStr));
   }
 
   void _showFilterDialog() {
@@ -183,6 +192,104 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  Future<void> _pickImage(ImageSource source) async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final productProvider = Provider.of<ProductProvider>(context, listen: false);
+    
+    try {
+      final picker = ImagePicker();
+      final image = await picker.pickImage(source: source);
+      
+      if (!mounted) return;
+      
+      if (image != null) {
+        scaffoldMessenger.showSnackBar(
+          const SnackBar(content: Text('Şəkil üzrə axtarış başladılır...')),
+        );
+        await productProvider.searchByImage(image.path);
+      }
+    } catch (e) {
+      debugPrint('Error picking image: $e');
+      if (mounted) {
+        String errorMsg = 'Şəkil seçilərkən xəta baş verdi.';
+        if (e.toString().contains('cameraDelegate')) {
+          errorMsg = 'Bu cihazda kamera dəstəklənmir. Zəhmət olmasa qalereyadan istifadə edin.';
+        }
+        scaffoldMessenger.showSnackBar(
+          SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  void _showImageSourceDialog() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Şəkil mənbəyini seçin',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildSourceOption(
+                  icon: Icons.camera_alt,
+                  label: 'Kamera',
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _pickImage(ImageSource.camera);
+                  },
+                ),
+                _buildSourceOption(
+                  icon: Icons.photo_library,
+                  label: 'Qalereya',
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _pickImage(ImageSource.gallery);
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSourceOption({required IconData icon, required String label, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 32),
+            ),
+            const SizedBox(height: 12),
+            Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final locationText = _getLocationText();
@@ -229,18 +336,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         actions: [
           IconButton(
-            onPressed: () async {
-              final picker = ImagePicker();
-              final image = await picker.pickImage(source: ImageSource.camera);
-              if (image != null) {
-                // Image Search Logic
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('search'.tr() + '...'))
-                );
-                // Trigger provider search by image (mocked in backend)
-                Provider.of<ProductProvider>(context, listen: false).searchByImage(image.path);
-              }
-            },
+            onPressed: () => _showImageSourceDialog(),
             icon: Icon(Icons.camera_alt_outlined, color: isDark ? Colors.white : Colors.black),
             tooltip: 'Axtarış (Şəkil)',
           ),
@@ -303,47 +399,62 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Axtarış
               Row(
                 children: [
                   Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      style: TextStyle(color: isDark ? Colors.white : Colors.black),
-                      onChanged: (value) {
-                        setState(() => _searchQuery = value);
-                        // Qısa gecikmə ilə axtarış funksiyası (debounce effect)
-                        Future.delayed(const Duration(milliseconds: 500), () {
-                          if (_searchQuery == value) _applyFilters();
-                        });
-                      },
-                      onSubmitted: (_) => _applyFilters(),
-                      decoration: InputDecoration(
-                        suffixIcon: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (_searchQuery.isNotEmpty)
-                              IconButton(
-                                icon: Icon(Icons.close, size: 18, color: isDark ? Colors.white : Colors.black),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  setState(() => _searchQuery = '');
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 15,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        style: TextStyle(color: isDark ? Colors.white : Colors.black),
+                        onChanged: (value) {
+                          setState(() => _searchQuery = value);
+                          Future.delayed(const Duration(milliseconds: 500), () {
+                            if (_searchQuery == value) _applyFilters();
+                          });
+                        },
+                        onSubmitted: (_) => _applyFilters(),
+                        decoration: InputDecoration(
+                          hintText: 'Yemək və ya restoran axtar...',
+                          hintStyle: TextStyle(color: isDark ? Colors.grey[600] : Colors.grey[400], fontSize: 14),
+                          prefixIcon: Icon(Icons.search, color: isDark ? Colors.grey[400] : Colors.grey[400]),
+                          suffixIcon: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (_searchQuery.isNotEmpty)
+                                IconButton(
+                                  icon: Icon(Icons.close, size: 18, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    setState(() => _searchQuery = '');
+                                    _applyFilters();
+                                  },
+                                ),
+                              VoiceSearchWidget(
+                                onResult: (text) {
+                                  _searchController.text = text;
+                                  setState(() => _searchQuery = text);
                                   _applyFilters();
                                 },
                               ),
-                            VoiceSearchWidget(
-                              onResult: (text) {
-                                _searchController.text = text;
-                                setState(() => _searchQuery = text);
-                                _applyFilters();
-                              },
-                            ),
-                          ],
+                            ],
+                          ),
+                          filled: false,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
                         ),
-                        filled: true,
-                        fillColor: isDark ? Colors.grey[800] : Colors.grey.shade100,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                       ),
                     ),
                   ),
@@ -351,17 +462,65 @@ class _HomeScreenState extends State<HomeScreen> {
                   GestureDetector(
                     onTap: _showFilterDialog,
                     child: Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
+                        color: Theme.of(context).colorScheme.primary,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                      child: Icon(Icons.tune, color: Theme.of(context).colorScheme.primary),
+                      child: const Icon(Icons.tune, color: Colors.white, size: 22),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 32),
+
+              // Flash Sales Section
+              if (productProvider.flashSales.isNotEmpty) ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Text('Flash Sales', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                        const SizedBox(width: 12),
+                        _buildCountdownTimer(productProvider.flashSales.first['flashSaleEndDate']),
+                      ],
+                    ),
+                    TextButton(onPressed: () {}, child: Text('Hamısı', style: TextStyle(color: Theme.of(context).colorScheme.primary))),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 280,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: productProvider.flashSales.length,
+                    itemBuilder: (context, index) {
+                      final product = productProvider.flashSales[index];
+                      return Container(
+                        width: 180,
+                        margin: const EdgeInsets.only(right: 16, bottom: 10),
+                        child: ProductCard(
+                          product: product,
+                          isFavorite: wishlistProvider.isFavorite(product['name']),
+                          onFavoriteToggle: () => wishlistProvider.toggle(product['name']),
+                          onAddToCart: () {
+                            cartProvider.addItem(product['_id'], product['name'], product['flashSalePrice']?.toString() ?? product['price'].toString(), product['image']);
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 32),
+              ],
 
               // Kateqoriyalar
               const Text('Populyar Kateqoriyalar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -430,9 +589,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         padding: const EdgeInsets.all(40),
                         child: Column(
                           children: [
-                            Icon(Icons.search_off, size: 60, color: Colors.grey.shade300),
+                            Lottie.network(
+                              'https://lottie.host/809f6111-92b0-4bf6-8e5c-7d722ef5e921/Cq2C5X7O8v.json',
+                              width: 150,
+                              height: 150,
+                            ),
                             const SizedBox(height: 12),
-                            const Text('Nəticə tapılmadı', style: TextStyle(color: Colors.grey, fontSize: 16)),
+                            const Text('Nəticə tapılmadı', style: TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.bold)),
                           ],
                         ),
                       ),
@@ -467,7 +630,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             );
                           },
                           onAddToCart: () {
-                            cartProvider.addItem(title, product['price']?.toString() ?? '0', product['image']?.toString() ?? '');
+                            cartProvider.addItem(product['_id'], title, product['price']?.toString() ?? '0', product['image']?.toString() ?? '');
                             ScaffoldMessenger.of(context).clearSnackBars();
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(

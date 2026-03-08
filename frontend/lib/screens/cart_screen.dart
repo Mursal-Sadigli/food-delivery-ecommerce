@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:lottie/lottie.dart';
 import '../providers/cart_provider.dart';
 import '../widgets/custom_button.dart';
 import 'checkout_screen.dart';
@@ -33,11 +35,15 @@ class CartScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.shopping_cart_outlined, size: 80, color: Colors.grey.shade400),
+                  Lottie.network(
+                    'https://lottie.host/80784964-6d9b-4497-a708-34863f64c679/6S5C5X7O8v.json',
+                    width: 200,
+                    height: 200,
+                  ),
                   const SizedBox(height: 16),
                   const Text(
                     'Səbətiniz boşdur',
-                    style: TextStyle(fontSize: 18, color: Colors.black54),
+                    style: TextStyle(fontSize: 18, color: Colors.black54, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   const Text(
@@ -84,14 +90,23 @@ class CartScreen extends StatelessWidget {
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
                                 child: item.image.isNotEmpty
-                                    ? Image.network(
-                                        item.image,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) => Container(
-                                          color: Colors.grey.shade300,
-                                          child: const Icon(Icons.fastfood, color: Colors.white),
-                                        ),
-                                      )
+                                    ? (item.image.startsWith('data:image')
+                                        ? Image.memory(
+                                            base64Decode(item.image.split(',').last),
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) => Container(
+                                              color: Colors.grey.shade300,
+                                              child: const Icon(Icons.broken_image, color: Colors.white),
+                                            ),
+                                          )
+                                        : Image.network(
+                                            item.image,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) => Container(
+                                              color: Colors.grey.shade300,
+                                              child: const Icon(Icons.fastfood, color: Colors.white),
+                                            ),
+                                          ))
                                     : Container(
                                         color: Colors.grey.shade300,
                                         child: const Icon(Icons.fastfood, color: Colors.white),

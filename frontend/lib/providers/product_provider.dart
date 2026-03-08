@@ -5,9 +5,15 @@ class ProductProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
 
   List<dynamic> _products = [];
+  List<dynamic> _myProducts = [];
+  List<dynamic> _flashSales = [];
+  List<dynamic> _recommendations = [];
   bool _isLoading = false;
 
   List<dynamic> get products => _products;
+  List<dynamic> get myProducts => _myProducts;
+  List<dynamic> get flashSales => _flashSales;
+  List<dynamic> get recommendations => _recommendations;
   bool get isLoading => _isLoading;
 
   Future<void> fetchProducts({
@@ -41,12 +47,27 @@ class ProductProvider with ChangeNotifier {
     }
   }
 
-  Future<void> fetchRecommendations() async {
+  Future<void> fetchFlashSales() async {
     try {
-      final response = await _apiService.get('/products/recommendations');
+      final response = await _apiService.get('/products/flash-sales');
       if (response != null && response is List) {
-        // Here you could store them in a separate list for a "Recommended" section
-        _products = response; // For now we just update main products
+        _flashSales = response;
+        notifyListeners();
+      }
+    } catch (e) {
+      print('Flash Sales gətirilərkən xəta: $e');
+    }
+  }
+
+  Future<void> fetchRecommendations({String? category, String? exclude}) async {
+    try {
+      String query = '';
+      if (category != null) query += '?category=$category';
+      if (exclude != null) query += (query.isEmpty ? '?' : '&') + 'exclude=$exclude';
+      
+      final response = await _apiService.get('/products/recommendations$query');
+      if (response != null && response is List) {
+        _recommendations = response;
         notifyListeners();
       }
     } catch (e) {
@@ -85,6 +106,81 @@ class ProductProvider with ChangeNotifier {
     } catch (e) {
       print('Rəy əlavə edilərkən xəta: $e');
       return false;
+    }
+  }
+
+  Future<bool> addProduct(Map<String, dynamic> productData) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final response = await _apiService.post('/products', productData);
+      if (response != null) {
+        await fetchProducts();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Məhsul əlavə edilərkən xəta: $e');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> updateProduct(String id, Map<String, dynamic> productData) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final cleanId = id.trim();
+      final response = await _apiService.put('/products/$cleanId', productData);
+      if (response != null) {
+        await fetchProducts();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Məhsul yenilənərkən xəta: $e');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> deleteProduct(String id) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final cleanId = id.trim();
+      final response = await _apiService.delete('/products/$cleanId');
+      if (response != null) {
+        await fetchProducts();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Məhsul silinərkən xəta: $e');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchMyProducts() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final response = await _apiService.get('/products/myproducts');
+      if (response != null && response is List) {
+        _myProducts = response;
+      }
+    } catch (e) {
+      print('Mənim elanlarım gətirilərkən xəta: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 

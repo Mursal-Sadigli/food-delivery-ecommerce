@@ -83,6 +83,15 @@ exports.updateOrderToPaid = async (req, res) => {
         // Referral bonusu (Yalnız ilk uğurlu sifarişdə)
         const orderCount = await Order.countDocuments({ user: user._id, isPaid: true });
         if (orderCount === 1 && user.referredBy) {
+          // Referee (Gələn istifadəçi) bonusu - 2 AZN
+          user.walletBalance += 2;
+          user.walletTransactions.unshift({
+            amount: 2,
+            type: 'deposit',
+            description: 'Referral qeydiyyat bonusu'
+          });
+
+          // Referrer (Dəvət edən) bonusu - 5 AZN
           const referrer = await User.findById(user.referredBy);
           if (referrer) {
             referrer.walletBalance += 5;

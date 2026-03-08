@@ -6,6 +6,7 @@ import '../widgets/custom_textfield.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 import 'main_screen.dart';
+import 'otp_verification_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -30,6 +31,13 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const MainScreen()),
+      );
+    } else if (authProvider.twoFactorRequired && mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => OTPVerificationScreen(email: authProvider.twoFactorEmail!),
+        ),
       );
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -53,7 +53,10 @@ const userSchema = new mongoose.Schema({
   referredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   loyaltyPoints: { type: Number, default: 0 },
   isPro: { type: Boolean, default: false },
-  subscriptionExpiry: { type: Date }
+  subscriptionExpiry: { type: Date },
+  isTwoFactorEnabled: { type: Boolean, default: false },
+  twoFactorCode: { type: String },
+  twoFactorExpires: { type: Date }
 }, { timestamps: true });
 
 // Parolu hash-ləmək

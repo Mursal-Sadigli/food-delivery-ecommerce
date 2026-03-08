@@ -13,7 +13,9 @@ const productSchema = new mongoose.Schema({
   name: { type: String, required: true },
   image: { type: String, required: true },
   description: { type: String, required: true },
-  brand: { type: String, required: true },
+  sellerName: { type: String },
+  sellerPhone: { type: String },
+  brand: { type: String },
   category: { type: String, required: true },
   price: { type: Number, required: true, default: 0 },
   sizes: [
@@ -32,6 +34,9 @@ const productSchema = new mongoose.Schema({
   reviews: [reviewSchema],
   rating: { type: Number, required: true, default: 0 },
   numReviews: { type: Number, required: true, default: 0 },
+  isFlashSale: { type: Boolean, default: false },
+  flashSalePrice: { type: Number },
+  flashSaleEndDate: { type: Date },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Product', productSchema);
