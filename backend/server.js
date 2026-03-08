@@ -24,6 +24,7 @@ const chatRoutes = require('./routes/chatRoutes');
 const couponRoutes = require('./routes/couponRoutes');
 const referralRoutes = require('./routes/referralRoutes');
 const subscriptionRoutes = require('./routes/subscriptionRoutes');
+const walletRoutes = require('./routes/walletRoutes');
 
 // Routing (əsas səhifə)
 app.use('/api/auth', authRoutes);

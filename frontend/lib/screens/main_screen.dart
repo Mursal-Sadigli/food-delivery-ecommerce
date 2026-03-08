@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
-import 'favorites_screen.dart';
 import 'cart_screen.dart';
 import 'profile_screen.dart';
+import 'add_product_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -16,7 +16,7 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _pages = [
     const HomeScreen(),
-    const FavoritesScreen(),
+    const AddProductScreen(),
     const CartScreen(),
     const ProfileScreen(),
   ];
@@ -37,7 +37,7 @@ class _MainScreenState extends State<MainScreen> {
         },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'Ana Səhifə'),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite_outline), activeIcon: Icon(Icons.favorite), label: 'Sevimlilər'),
+          BottomNavigationBarItem(icon: Icon(Icons.add_circle_outline, size: 30, color: Colors.orange), activeIcon: Icon(Icons.add_circle, size: 30, color: Colors.orange), label: 'Sat'),
           BottomNavigationBarItem(icon: Icon(Icons.shopping_cart_outlined), activeIcon: Icon(Icons.shopping_cart), label: 'Səbət'),
           BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: 'Profil'),
         ],

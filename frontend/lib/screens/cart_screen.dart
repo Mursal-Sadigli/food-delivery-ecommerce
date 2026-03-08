@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/cart_provider.dart';
 import '../widgets/custom_button.dart';
 import 'checkout_screen.dart';
+import 'favorites_screen.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -15,6 +16,15 @@ class CartScreen extends StatelessWidget {
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoritesScreen()));
+            },
+            icon: const Icon(Icons.favorite_outline, color: Colors.red),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Consumer<CartProvider>(
         builder: (context, cart, child) {

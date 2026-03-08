@@ -33,13 +33,21 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   void initState() {
     super.initState();
     _cityCtrl.addListener(_onSearchChanged);
+    _addressCtrl.addListener(_onSearchChanged);
   }
 
   void _onSearchChanged() {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 1000), () {
-      if (_cityCtrl.text.isNotEmpty) {
-        _searchLocation(_cityCtrl.text);
+      if (_cityCtrl.text.isNotEmpty || _addressCtrl.text.isNotEmpty) {
+        final query = [
+          _addressCtrl.text.trim(),
+          _cityCtrl.text.trim(),
+        ].where((s) => s.isNotEmpty).join(', ');
+        
+        if (query.isNotEmpty) {
+          _searchLocation(query);
+        }
       }
     });
   }
