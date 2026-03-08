@@ -1,6 +1,28 @@
+const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const User = require('../models/User');
+const Review = require('../models/Review');
+const Coupon = require('../models/Coupon');
+const Setting = require('../models/Setting');
+const AuditLog = require('../models/AuditLog');
+
+// Helper: Create Audit Log
+const createLog = async (adminId, action, targetType, targetId, details, req) => {
+  try {
+    await AuditLog.create({
+      admin: adminId,
+      action,
+      targetType,
+      targetId,
+      details,
+      ipAddress: req.ip || req.connection.remoteAddress,
+      userAgent: req.get('User-Agent')
+    });
+  } catch (err) {
+    console.error('AuditLog creation failed:', err);
+  }
+};
 
 // @desc    Get dashboard analytics
 // @route   GET /api/admin/analytics
@@ -79,3 +101,298 @@ exports.getAnalytics = async (req, res) => {
     res.status(500).json({ message: 'Server xətası' });
   }
 };
+
+// @desc    Bütün sifarişləri (Orders) gətir
+// @route   GET /api/admin/orders
+// @access  Private/Admin
+exports.getAllOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({})
+      .populate('user', 'id name email')
+      .populate({
+        path: 'orderItems.product',
+        select: 'name price category user',
+        populate: {
+          path: 'user',
+          select: 'name'
+        }
+      })
+      .populate('courier', 'name email')
+      .sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ message: 'Sifarişlər yüklənərkən xəta yarandı.' });
+  }
+};
+
+// @desc    Sifarişin statusunu yenilə
+// @route   PUT /api/admin/orders/:id
+// @access  Private/Admin
+exports.updateOrderStatus = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ message: 'Sifariş tapılmadı' });
+    }
+
+    order.status = req.body.status || order.status;
+    const updatedOrder = await order.save();
+    res.json(updatedOrder);
+  } catch (error) {
+    res.status(500).json({ message: 'Sifariş yenilənərkən xəta yarandı.' });
+  }
+};
+
+// @desc    Bütün məhsulları/yeməkləri gətir
+// @route   GET /api/admin/foods
+// @access  Private/Admin
+exports.getAllFoods = async (req, res) => {
+  try {
+    const products = await Product.find({}).populate('user', 'id name'); // user = restaurant/seller
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ message: 'Yeməklər yüklənərkən xəta yarandı.' });
+  }
+};
+
+// @desc    Məhsulu sil
+// @route   DELETE /api/admin/foods/:id
+// @access  Private/Admin
+exports.deleteFood = async (req, res) => {
+  try {
+    const food = await Product.findById(req.params.id);
+    if (!food) return res.status(404).json({ message: 'Məhsul tapılmadı' });
+    await food.deleteOne();
+    await createLog(req.user._id, 'DELETE_FOOD', 'Product', req.params.id, `Məhsul silindi: ${food.name}`, req);
+    res.json({ message: 'Məhsul silindi' });
+  } catch (error) {
+    res.status(500).json({ message: 'Məhsul silinərkən xəta yarandı.' });
+  }
+};
+
+// @desc    Bütün istifadəçiləri gətir
+// @route   GET /api/admin/users
+// @access  Private/Admin
+exports.getAllUsers = async (req, res) => {
+  try {
+    // Şifrələri (password) çıxarmaq
+    const users = await User.find({}).select('-password').sort({ createdAt: -1 });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: 'İstifadəçilər yüklənərkən xəta yarandı.' });
+  }
+};
+
+// @desc    İstifadəçi rolunu yenilə
+// @route   PUT /api/admin/users/:id/role
+// @access  Private/Admin
+exports.updateUserRole = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'İstifadəçi tapılmadı' });
+    }
+
+    user.role = req.body.role;
+    await user.save();
+    await createLog(req.user._id, 'CHANGE_ROLE', 'User', req.params.id, `Rol dəyişdirildi: ${req.body.role}`, req);
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: 'İstifadəçi rolu yenilənərkən xəta yarandı.' });
+  }
+};
+
+// @desc    Bütün kuryerləri gətir
+// @route   GET /api/admin/couriers
+// @access  Private/Admin
+exports.getAllCouriers = async (req, res) => {
+  try {
+    const couriers = await User.find({ role: 'courier' }).select('-password');
+    res.json(couriers);
+  } catch (error) {
+    res.status(500).json({ message: 'Kuryerlər yüklənərkən xəta yarandı.' });
+  }
+};
+
+// --- Reviews ---
+exports.getAllReviews = async (req, res) => {
+  try {
+    const reviews = await Review.find({})
+      .populate('user', 'name email')
+      .populate('product', 'name')
+      .sort({ createdAt: -1 });
+    res.json(reviews);
+  } catch (error) {
+    res.status(500).json({ message: 'Rəylər yüklənərkən xəta yarandı.' });
+  }
+};
+
+exports.deleteReview = async (req, res) => {
+  try {
+    const review = await Review.findById(req.params.id);
+    if (!review) return res.status(404).json({ message: 'Rəy tapılmadı' });
+    await review.deleteOne();
+    await createLog(req.user._id, 'DELETE_REVIEW', 'Review', req.params.id, `Rəy silindi: ${review.comment.substring(0, 20)}...`, req);
+    res.json({ message: 'Rəy silindi' });
+  } catch (error) {
+    res.status(500).json({ message: 'Rəy silinərkən xəta yarandı.' });
+  }
+};
+
+// --- Promotions (Coupons) ---
+exports.getAllCoupons = async (req, res) => {
+  try {
+    const coupons = await Coupon.find({}).sort({ createdAt: -1 });
+    res.json(coupons);
+  } catch (error) {
+    res.status(500).json({ message: 'Kuponlar yüklənərkən xəta yarandı.' });
+  }
+};
+
+exports.createCoupon = async (req, res) => {
+  try {
+    const coupon = await Coupon.create(req.body);
+    res.status(201).json(coupon);
+  } catch (error) {
+    res.status(500).json({ message: 'Kupon yaradılarkən xəta yarandı.' });
+  }
+};
+
+exports.deleteCoupon = async (req, res) => {
+  try {
+    const coupon = await Coupon.findById(req.params.id);
+    if (!coupon) return res.status(404).json({ message: 'Kupon tapılmadı' });
+    await coupon.deleteOne();
+    await createLog(req.user._id, 'DELETE_COUPON', 'Coupon', req.params.id, `Coupon ${coupon.code} deleted`, req);
+    res.json({ message: 'Kupon silindi' });
+  } catch (error) {
+    res.status(500).json({ message: 'Kupon silinərkən xəta yarandı.' });
+  }
+};
+
+// --- Settings ---
+exports.getSettings = async (req, res) => {
+  try {
+    let settings = await Setting.findOne();
+    if (!settings) {
+      settings = await Setting.create({});
+    }
+    res.json(settings);
+  } catch (error) {
+    res.status(500).json({ message: 'Tənzimləmələr yüklənərkən xəta yarandı.' });
+  }
+};
+
+exports.updateSettings = async (req, res) => {
+  try {
+    let settings = await Setting.findOne();
+    if (!settings) {
+      settings = new Setting(req.body);
+    } else {
+      Object.assign(settings, req.body);
+    }
+    await settings.save();
+    await createLog(req.user._id, 'UPDATE_SETTINGS', 'Setting', settings._id, `System settings updated`, req);
+    res.json(settings);
+  } catch (error) {
+    res.status(500).json({ message: 'Tənzimləmələr yenilənərkən xəta yarandı.' });
+  }
+};
+
+// --- Payments ---
+exports.getAllPayments = async (req, res) => {
+  try {
+    const payments = await Order.find({ isPaid: true })
+      .populate('user', 'name email')
+      .select('totalPrice paidAt paymentMethod _id')
+      .sort({ paidAt: -1 });
+    res.json(payments);
+  } catch (error) {
+    res.status(500).json({ message: 'Ödənişlər yüklənərkən xəta yarandı.' });
+  }
+};
+
+// --- Audit Logs ---
+exports.getAuditLogs = async (req, res) => {
+  try {
+    const logs = await AuditLog.find({})
+      .populate('admin', 'name email')
+      .sort({ createdAt: -1 })
+      .limit(100);
+    res.json(logs);
+  } catch (error) {
+    res.status(500).json({ message: 'Audit loqları yüklənərkən xəta yarandı.' });
+  }
+};
+
+// --- Order Actions (Cancel / Refund) ---
+exports.cancelOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Sifariş tapılmadı' });
+    
+    order.status = req.body.status; // Changed from 'Ləğv edildi' to req.body.status
+    await order.save();
+    
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('order_updated', order);
+    }
+    
+    await createLog(req.user._id, 'CANCEL_ORDER', 'Order', order._id, `Order cancelled`, req);
+    res.json(order);
+  } catch (error) {
+    res.status(500).json({ message: 'Sifariş ləğv edilərkən xəta yarandı.' });
+  }
+};
+
+exports.refundOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Sifariş tapılmadı' });
+    
+    order.status = 'Geri qaytarıldı';
+    await order.save();
+    
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('order_updated', order);
+    }
+    
+    await createLog(req.user._id, 'REFUND_ORDER', 'Order', order._id, `Order refunded`, req);
+    res.json(order);
+  } catch (error) {
+    res.status(500).json({ message: 'Ödəniş geri qaytarılarkən xəta yarandı.' });
+  }
+};
+
+// --- Global Search ---
+exports.globalSearch = async (req, res) => {
+  const { query } = req.query;
+  if (!query || query.length < 2) return res.json({ orders: [], restaurants: [], foods: [] });
+
+  try {
+    const regex = new RegExp(query, 'i');
+
+    const orders = await Order.find({
+      $or: [
+        { _id: mongoose.isValidObjectId(query) ? (query.length === 24 ? query : null) : null },
+        { status: regex }
+      ]
+    }).populate('user', 'name').limit(5);
+
+    const restaurants = await User.find({
+      role: 'shop',
+      $or: [{ name: regex }, { email: regex }]
+    }).limit(5);
+
+    const foods = await Product.find({
+      $or: [{ name: regex }, { category: regex }]
+    }).limit(5);
+
+    res.json({ orders, restaurants, foods });
+  } catch (error) {
+    res.status(500).json({ message: 'Axtarış zamanı xəta yarandı.' });
+  }
+};
+

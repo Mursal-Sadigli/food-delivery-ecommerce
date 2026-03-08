@@ -37,6 +37,12 @@ exports.addOrderItems = async (req, res) => {
       });
 
       const createdOrder = await order.save();
+      
+      const io = req.app.get('io');
+      if (io) {
+        io.emit('new_order', createdOrder);
+      }
+      
       res.status(201).json(createdOrder);
     }
   } catch (error) {
@@ -73,7 +79,12 @@ exports.updateOrderToPaid = async (req, res) => {
       };
 
       const updatedOrder = await order.save();
-
+      
+      const io = req.app.get('io');
+      if (io) {
+        io.emit('order_updated', updatedOrder);
+      }
+      
       // Referral və Loyalty Points məntiqi
       const user = await User.findById(order.user);
       if (user) {

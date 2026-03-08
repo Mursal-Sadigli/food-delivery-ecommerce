@@ -20,7 +20,7 @@ const orderSchema = new mongoose.Schema({
     lng: { type: Number },
   },
   paymentMethod: { type: String, required: true },
-  status: { type: String, enum: ['Hazırlanır', 'Bişirilir', 'Kuryerə verildi', 'Qapınızdadır', 'Çatdırıldı'], default: 'Hazırlanır' },
+  status: { type: String, enum: ['Hazırlanır', 'Bişirilir', 'Kuryerə verildi', 'Qapınızdadır', 'Çatdırıldı', 'Ləğv edildi', 'Geri qaytarıldı'], default: 'Hazırlanır' },
   courier: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   deliveryFee: { type: Number, default: 2.0 },
   scheduledAt: { type: Date },
