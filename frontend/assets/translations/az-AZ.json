@@ -102,5 +102,9 @@
   "rate_error": "Zəhmət olmasa məhsulu ulduzla qiymətləndirin.",
   "may_like": "Sizin üçün maraqlı ola bilər",
   "add_to_cart_with_price": "Səbətə Əlavə Et ({price} ₼)",
-  "added_to_cart_msg": "{quantity} ədəd {name} səbətə əlavə edildi 🛒"
+  "added_to_cart_msg": "{quantity} ədəd {name} səbətə əlavə edildi 🛒",
+  "courier_register": "Kuryer kimi qeydiyyat",
+  "courier_home": "Kuryer Paneli",
+  "courier_orders": "Sifarişlər",
+  "courier_earnings": "Qazanc"
 }

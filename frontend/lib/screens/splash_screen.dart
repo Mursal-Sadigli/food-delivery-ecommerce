@@ -6,6 +6,7 @@ import '../providers/biometric_provider.dart';
 import 'login_screen.dart';
 import 'onboarding_screen.dart';
 import 'main_screen.dart';
+import 'courier_home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -39,16 +40,23 @@ class _SplashScreenState extends State<SplashScreen> {
         if (biometric.isBiometricEnabled) {
           final auhtenticated = await biometric.authenticate();
           if (!auhtenticated) {
-            // Əgər imtina edilsə, yenidən sınamaq üçün burada qala bilər və ya login-ə ata bilər.
-            // Biz burada sadəcə login-ə atmırıq, çünki token var.
-            return; 
+            return;
           }
         }
-        
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const MainScreen()),
-        );
+
+        // Kuryer role yoxlama
+        final String? role = prefs.getString('userRole');
+        if (role == 'courier') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const CourierHomeScreen()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const MainScreen()),
+          );
+        }
       } else {
         Navigator.pushReplacement(
           context,

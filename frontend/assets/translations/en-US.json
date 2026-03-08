@@ -102,5 +102,9 @@
   "rate_error": "Please rate the product with stars.",
   "may_like": "You may also like",
   "add_to_cart_with_price": "Add to Cart ({price} ₼)",
-  "added_to_cart_msg": "{quantity} items of {name} added to cart 🛒"
+  "added_to_cart_msg": "{quantity} items of {name} added to cart 🛒",
+  "courier_register": "Courier Registration",
+  "courier_home": "Courier Dashboard",
+  "courier_orders": "Orders",
+  "courier_earnings": "Earnings"
 }

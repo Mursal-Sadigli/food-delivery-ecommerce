@@ -11,6 +11,7 @@ import 'providers/chat_provider.dart';
 import 'providers/wallet_provider.dart';
 import 'providers/biometric_provider.dart';
 import 'providers/notification_provider.dart';
+import 'providers/courier_provider.dart';
 import 'screens/splash_screen.dart';
 
 import 'services/notification_service.dart';
@@ -36,6 +37,7 @@ void main() async {
           ChangeNotifierProvider(create: (_) => WalletProvider()),
           ChangeNotifierProvider(create: (_) => BiometricProvider()),
           ChangeNotifierProvider(create: (_) => NotificationProvider()),
+          ChangeNotifierProvider(create: (_) => CourierProvider()),
         ],
         child: const SmartMarketApp(),
       ),

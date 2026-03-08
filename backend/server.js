@@ -26,6 +26,7 @@ const referralRoutes = require('./routes/referralRoutes');
 const subscriptionRoutes = require('./routes/subscriptionRoutes');
 const walletRoutes = require('./routes/walletRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const courierRoutes = require('./routes/courierRoutes');
 
 // Routing (əsas səhifə)
 app.use('/api/auth', authRoutes);
@@ -39,6 +40,7 @@ app.use('/api/wallet', walletRoutes);
 app.use('/api/referral', referralRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/courier', courierRoutes);
 app.get('/', (req, res) => {
   res.send('SmartMarket API işləyir...');
 });
@@ -47,11 +49,22 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/smartmarket';
 
+const http = require('http');
+const { Server } = require('socket.io');
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: '*' } });
+app.set('io', io);
+
+io.on('connection', (socket) => {
+  console.log('🔌 Socket qoşuldu:', socket.id);
+  socket.on('disconnect', () => console.log('🔌 Socket ayrıldı:', socket.id));
+});
+
 mongoose
   .connect(MONGO_URI)
   .then(() => {
     console.log('MongoDB Mongoose ilə uğurla qoşuldu.');
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`Server ${PORT} portunda işə düşdü...`);
     });
   })

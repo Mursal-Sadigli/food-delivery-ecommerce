@@ -8,7 +8,7 @@ const {
   verify2FA,
   toggle2FA
 } = require('../controllers/authController');
-const { protect } = require('../middleware/authMiddleware');
+const { protect } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 

@@ -68,6 +68,9 @@ class AuthProvider with ChangeNotifier {
         _token = response['token'];
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', _token!);
+        if (response['user'] != null && response['user']['role'] != null) {
+          await prefs.setString('userRole', response['user']['role']);
+        }
         _isLoading = false;
         notifyListeners();
         return true;
@@ -110,6 +113,9 @@ class AuthProvider with ChangeNotifier {
         _twoFactorRequired = false;
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', _token!);
+        if (response['user'] != null && response['user']['role'] != null) {
+          await prefs.setString('userRole', response['user']['role']);
+        }
         _isLoading = false;
         notifyListeners();
         return true;

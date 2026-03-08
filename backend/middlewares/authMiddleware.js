@@ -27,3 +27,11 @@ exports.admin = (req, res, next) => {
     res.status(401).json({ message: 'Admin icazəsi tələb olunur' });
   }
 };
+
+exports.protectCourier = (req, res, next) => {
+  if (req.user && (req.user.role === 'courier' || req.user.role === 'admin')) {
+    next();
+  } else {
+    res.status(401).json({ message: 'Kuryer icəzəsi tələb olunur' });
+  }
+};

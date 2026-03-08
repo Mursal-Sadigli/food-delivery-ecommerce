@@ -102,5 +102,9 @@
   "rate_error": "Пожалуйста, оцените товар звездами.",
   "may_like": "Вам также может понравиться",
   "add_to_cart_with_price": "Добавить в корзину ({price} ₼)",
-  "added_to_cart_msg": "{quantity} шт. {name} добавлено в корзину 🛒"
+  "added_to_cart_msg": "{quantity} шт. {name} добавлено в корзину 🛒",
+  "courier_register": "Регистрация курьера",
+  "courier_home": "Панель курьера",
+  "courier_orders": "Заказы",
+  "courier_earnings": "Заработок"
 }
