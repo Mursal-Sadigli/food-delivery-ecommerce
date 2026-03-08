@@ -123,25 +123,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> with TickerPr
     
     socket.onDisconnect((_) => print('Sifariş izləmə Socket-dən ayrıldı.'));
   }
-      } else {
-        if (mounted) setState(() => _currentStep = _steps.length - 1);
-        timer.cancel();
-      }
-    });
-
-    // Xəritə mərkəzləşdirilməsi
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          final bounds = LatLngBounds.fromPoints([_restaurantLocation, _homeLocation]);
-          _mapController.fitCamera(CameraFit.bounds(
-            bounds: bounds,
-            padding: const EdgeInsets.all(50),
-          ));
-        }
-      });
-    });
-  }
 
   @override
   void dispose() {
