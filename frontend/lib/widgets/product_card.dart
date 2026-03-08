@@ -46,14 +46,17 @@ class SkeletonProductCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SkeletonItem(height: 10, width: 40),
-                          SizedBox(height: 4),
-                          SkeletonItem(height: 20, width: 60),
-                        ],
+                      Flexible(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            SkeletonItem(height: 10, width: 40),
+                            SizedBox(height: 4),
+                            SkeletonItem(height: 20, width: 60),
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 4),
                       Container(
                         width: 70,
                         height: 35,

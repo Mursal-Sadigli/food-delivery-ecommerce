@@ -30,9 +30,11 @@ class FavoritesScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Lottie.network(
-                    'https://lottie.host/3e75e61d-7975-433a-96e0-81822709219b/MvMvL5jN5W.json',
+                    'https://assets3.lottiefiles.com/packages/lf20_w9yqyejf.json',
                     width: 150,
                     height: 150,
+                    errorBuilder: (context, error, stackTrace) =>
+                        Icon(Icons.favorite_outline, size: 80, color: Colors.grey[300]),
                   ),
                   const SizedBox(height: 16),
                   const Text(

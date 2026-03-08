@@ -1,4 +1,6 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class NotificationService {
   static final NotificationService _notificationService = NotificationService._internal();
@@ -12,6 +14,8 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
   Future<void> init() async {
+    if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) return;
+
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
@@ -40,6 +44,8 @@ class NotificationService {
     required String body,
     String? payload,
   }) async {
+    if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) return;
+
     const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
       'smartmarket_channel',
       'SmartMarket Notifications',

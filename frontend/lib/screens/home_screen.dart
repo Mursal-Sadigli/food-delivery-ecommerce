@@ -117,80 +117,82 @@ class _HomeScreenState extends State<HomeScreen> {
             final isDark = Theme.of(context).brightness == Brightness.dark;
             return Padding(
               padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Text('Filtrlər', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)),
-                  ),
-                  const SizedBox(height: 20),
-                  Text('Qiymət aralığı (₼)', style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black)),
-                  const SizedBox(height: 8),
-                  RangeSlider(
-                    values: RangeValues(tempMin, tempMax > 100 ? 100 : tempMax), // Cap UI slider at 100 for visual
-                    min: 0,
-                    max: 100,
-                    divisions: 20,
-                    labels: RangeLabels('${tempMin.toInt()} ₼', tempMax > 100 ? '100+ ₼' : '${tempMax.toInt()} ₼'),
-                    activeColor: Theme.of(context).colorScheme.primary,
-                    onChanged: (values) {
-                      setModalState(() {
-                        tempMin = values.start;
-                        tempMax = values.end >= 100 ? 10000 : values.end; // If maxed on UI, basically no limit
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  Text('Sıralama', style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black)),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      ChoiceChip(
-                        label: const Text('Ən yenilər'),
-                        selected: tempSort == '',
-                        onSelected: (val) => setModalState(() => tempSort = ''),
-                      ),
-                      ChoiceChip(
-                        label: const Text('Ucuzdan Bahaya'),
-                        selected: tempSort == 'price_asc',
-                        onSelected: (val) => setModalState(() => tempSort = 'price_asc'),
-                      ),
-                      ChoiceChip(
-                        label: const Text('Bahadan Ucuza'),
-                        selected: tempSort == 'price_desc',
-                        onSelected: (val) => setModalState(() => tempSort = 'price_desc'),
-                      ),
-                      ChoiceChip(
-                        label: const Text('Reytinqə Görə'),
-                        selected: tempSort == 'rating',
-                        onSelected: (val) => setModalState(() => tempSort = 'rating'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _minPrice = tempMin;
-                          _maxPrice = tempMax;
-                          _sortOption = tempSort;
-                        });
-                        _applyFilters();
-                        Navigator.pop(context);
-                      },
-                      child: const Text('Tətbiq et', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Text('Filtrlər', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 20),
+                    Text('Qiymət aralığı (₼)', style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black)),
+                    const SizedBox(height: 8),
+                    RangeSlider(
+                      values: RangeValues(tempMin, tempMax > 100 ? 100 : tempMax), // Cap UI slider at 100 for visual
+                      min: 0,
+                      max: 100,
+                      divisions: 20,
+                      labels: RangeLabels('${tempMin.toInt()} ₼', tempMax > 100 ? '100+ ₼' : '${tempMax.toInt()} ₼'),
+                      activeColor: Theme.of(context).colorScheme.primary,
+                      onChanged: (values) {
+                        setModalState(() {
+                          tempMin = values.start;
+                          tempMax = values.end >= 100 ? 10000 : values.end; // If maxed on UI, basically no limit
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Text('Sıralama', style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black)),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        ChoiceChip(
+                          label: const Text('Ən yenilər'),
+                          selected: tempSort == '',
+                          onSelected: (val) => setModalState(() => tempSort = ''),
+                        ),
+                        ChoiceChip(
+                          label: const Text('Ucuzdan Bahaya'),
+                          selected: tempSort == 'price_asc',
+                          onSelected: (val) => setModalState(() => tempSort = 'price_asc'),
+                        ),
+                        ChoiceChip(
+                          label: const Text('Bahadan Ucuza'),
+                          selected: tempSort == 'price_desc',
+                          onSelected: (val) => setModalState(() => tempSort = 'price_desc'),
+                        ),
+                        ChoiceChip(
+                          label: const Text('Reytinqə Görə'),
+                          selected: tempSort == 'rating',
+                          onSelected: (val) => setModalState(() => tempSort = 'rating'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _minPrice = tempMin;
+                            _maxPrice = tempMax;
+                            _sortOption = tempSort;
+                          });
+                          _applyFilters();
+                          Navigator.pop(context);
+                        },
+                        child: const Text('Tətbiq et', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -527,12 +529,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        const Text('Flash Sales', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                        const SizedBox(width: 12),
-                        _buildCountdownTimer(productProvider.flashSales.first['flashSaleEndDate']),
-                      ],
+                    Expanded(
+                      child: Row(
+                        children: [
+                          const Text('Flash Sales', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                          const SizedBox(width: 8),
+                          Flexible(child: _buildCountdownTimer(productProvider.flashSales.first['flashSaleEndDate'])),
+                        ],
+                      ),
                     ),
                     TextButton(onPressed: () {}, child: Text('Hamısı', style: TextStyle(color: Theme.of(context).colorScheme.primary))),
                   ],
@@ -631,9 +635,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           children: [
                             Lottie.network(
-                              'https://lottie.host/809f6111-92b0-4bf6-8e5c-7d722ef5e921/Cq2C5X7O8v.json',
+                              'https://assets9.lottiefiles.com/packages/lf20_t24tpvcu.json',
                               width: 150,
                               height: 150,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Icon(Icons.search_off, size: 80, color: Colors.grey[300]),
                             ),
                             const SizedBox(height: 12),
                             const Text('Nəticə tapılmadı', style: TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.bold)),

@@ -36,9 +36,11 @@ class CartScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Lottie.network(
-                    'https://lottie.host/80784964-6d9b-4497-a708-34863f64c679/6S5C5X7O8v.json',
+                    'https://assets8.lottiefiles.com/packages/lf20_3vdnzvze.json',
                     width: 200,
                     height: 200,
+                    errorBuilder: (context, error, stackTrace) =>
+                        Icon(Icons.shopping_cart_outlined, size: 80, color: Colors.grey[300]),
                   ),
                   const SizedBox(height: 16),
                   const Text(
