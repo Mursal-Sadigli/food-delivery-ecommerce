@@ -137,6 +137,18 @@ exports.updateOrderStatus = async (req, res) => {
 
     order.status = req.body.status || order.status;
     const updatedOrder = await order.save();
+    
+    // Qeydiyyatlı FCM token varsa push göndər
+    const orderUser = await User.findById(order.user);
+    if (orderUser && orderUser.fcmToken) {
+      const { sendPushNotification } = require('../utils/firebase');
+      await sendPushNotification(
+        orderUser.fcmToken,
+        'Sifarişinizin statusu yeniləndi',
+        `Sifarişiniz qeydə alındı və hazırda '${updatedOrder.status}' statusundadır.`
+      );
+    }
+
     res.json(updatedOrder);
   } catch (error) {
     res.status(500).json({ message: 'Sifariş yenilənərkən xəta yarandı.' });

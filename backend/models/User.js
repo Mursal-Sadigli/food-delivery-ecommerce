@@ -56,7 +56,8 @@ const userSchema = new mongoose.Schema({
   subscriptionExpiry: { type: Date },
   isTwoFactorEnabled: { type: Boolean, default: false },
   twoFactorCode: { type: String },
-  twoFactorExpires: { type: Date }
+  twoFactorExpires: { type: Date },
+  fcmToken: { type: String }
 }, { timestamps: true });
 
 // Parolu hash-ləmək

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:provider/provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../services/api_service.dart';
+import '../providers/cart_provider.dart';
+import '../widgets/skeleton_item.dart';
 import 'order_tracking_screen.dart';
 
 class OrdersScreen extends StatefulWidget {
@@ -87,7 +91,52 @@ class _OrdersScreenState extends State<OrdersScreen> {
       body: RefreshIndicator(
         onRefresh: _fetchOrders,
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? ListView.builder(
+                padding: const EdgeInsets.all(20),
+                itemCount: 4,
+                itemBuilder: (context, index) {
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 20),
+                    height: 180,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.grey[900] : Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: isDark ? Colors.grey[800]! : Colors.grey[100]!),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.grey[800] : Colors.grey[100],
+                            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              SkeletonItem(width: 120, height: 20),
+                              SizedBox(height: 8),
+                              SkeletonItem(width: 80, height: 14),
+                              SizedBox(height: 20),
+                              Row(
+                                children: [
+                                  Expanded(child: SkeletonItem(height: 40)),
+                                  SizedBox(width: 12),
+                                  Expanded(child: SkeletonItem(height: 40)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              )
             : _orders.isEmpty
                 ? Center(
                     child: Column(
@@ -95,7 +144,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       children: [
                         Icon(Icons.shopping_basket_outlined, size: 64, color: isDark ? Colors.grey[700] : Colors.grey[300]),
                         const SizedBox(height: 16),
-                        Text('no_orders'.tr(), style: TextStyle(color: Colors.grey, fontSize: 16)),
+                        Text('no_orders'.tr(), style: const TextStyle(color: Colors.grey, fontSize: 16)),
                       ],
                     ),
                   )
@@ -228,6 +277,24 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                         ),
                                       ],
                                     ),
+                                    if (isDelivered) ...[
+                                      const SizedBox(height: 12),
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton.icon(
+                                          onPressed: () => _reorder(order),
+                                          icon: const Icon(Icons.replay_rounded, size: 18),
+                                          label: const Text('Yenidən Sifariş Et'),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Theme.of(context).colorScheme.primary,
+                                            foregroundColor: Colors.white,
+                                            elevation: 0,
+                                            padding: const EdgeInsets.symmetric(vertical: 12),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),
@@ -237,6 +304,29 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       );
                     },
                   ),
+      ),
+    );
+  }
+
+  void _reorder(Map<String, dynamic> order) {
+    final cart = Provider.of<CartProvider>(context, listen: false);
+    final items = order['orderItems'] as List? ?? [];
+    for (final item in items) {
+      cart.addItem(
+        item['product']?.toString() ?? '',
+        item['name']?.toString() ?? '',
+        item['price']?.toString() ?? '0',
+        item['image']?.toString() ?? '',
+        quantity: item['qty'] as int? ?? 1,
+      );
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Məhsullar səbətə əlavə edildi! 👍'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -319,17 +409,33 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   const Divider(height: 24),
                   _summaryRow('total'.tr(), '${order['totalPrice']?.toStringAsFixed(2) ?? '0.00'} ₼', isDark, isTotal: true),
                   const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _showQRCodeModal(order['_id']),
+                          icon: const Icon(Icons.qr_code_2),
+                          label: const Text('QR Kod'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            side: BorderSide(color: Theme.of(context).colorScheme.primary),
+                          ),
+                        ),
                       ),
-                      child: Text('close'.tr(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).colorScheme.primary,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          child: Text('close'.tr(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -338,6 +444,77 @@ class _OrdersScreenState extends State<OrdersScreen> {
         ),
       ),
     );
+  }
+
+  void _showQRCodeModal(String orderId) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+    try {
+      final response = await ApiService().get('/orders/$orderId/qr');
+      if (mounted) Navigator.pop(context); // Close loading
+      
+      if (response != null && response['qrData'] != null) {
+        showModalBottomSheet(
+          context: context,
+          backgroundColor: Colors.transparent,
+          isScrollControlled: true,
+          builder: (ctx) => Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+                const SizedBox(height: 32),
+                const Text('Sifariş Təsdiqi QR', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Text('Bu QR kodu kuryerə göstərin', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+                const SizedBox(height: 32),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20)],
+                  ),
+                  child: QrImageView(
+                    data: response['qrData'],
+                    version: QrVersions.auto,
+                    size: 200.0,
+                    foregroundColor: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 40),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: Text('close'.tr(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('QR kod yaradılarkən xəta baş verdi')));
+      }
+    }
   }
 
   Widget _summaryRow(String label, String value, bool isDark, {bool isTotal = false}) {

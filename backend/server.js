@@ -48,6 +48,7 @@ app.use('/api/referral', referralRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/courier', courierRoutes);
+app.use('/api/courier-chat', require('./routes/courierChatRoutes'));
 app.get('/', (req, res) => {
   res.send('SmartMarket API işləyir...');
 });
@@ -64,6 +65,21 @@ app.set('io', io);
 
 io.on('connection', (socket) => {
   console.log('🔌 Socket qoşuldu:', socket.id);
+  
+  // Real-time Order Tracking Map
+  socket.on('joinOrder', (orderId) => {
+    socket.join(`order_${orderId}`);
+    console.log(`Kuryer & İstifadəçi '${orderId}' otağına qatıldı`);
+  });
+
+  socket.on('updateLocation', (data) => {
+    // Kuryer lokasiyası dəyişdikdə order otağındakılara göndər
+    io.to(`order_${data.orderId}`).emit('courierLocationUpdate', {
+      latitude: data.latitude,
+      longitude: data.longitude
+    });
+  });
+
   socket.on('disconnect', () => console.log('🔌 Socket ayrıldı:', socket.id));
 });
 

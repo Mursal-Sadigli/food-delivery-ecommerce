@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
 import '../widgets/product_card.dart';
+import '../widgets/product_widgets.dart';
 import '../providers/cart_provider.dart';
 import '../providers/product_provider.dart';
 import '../widgets/custom_button.dart';
@@ -82,11 +83,20 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     }
 
     setState(() => _isReviewSubmitting = true);
+    
+    // Şəkilləri base64-ə çeviririk
+    List<String> base64Images = [];
+    for (var file in _selectedReviewImages) {
+      final bytes = await File(file.path).readAsBytes();
+      final base64String = base64Encode(bytes);
+      base64Images.add('data:image/jpeg;base64,$base64String');
+    }
+
     final success = await Provider.of<ProductProvider>(context, listen: false).addReview(
       widget.product['_id'], 
       _userRating, 
       comment,
-      images: _selectedReviewImages.map((e) => e.path).toList(),
+      images: base64Images,
     );
     setState(() => _isReviewSubmitting = false);
 
@@ -156,8 +166,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         ? 'http://localhost:5000$rawImageUrl' 
         : rawImageUrl;
 
-    final title = widget.product['name']?.toString() ?? 'Food';
-    final description = widget.product['description']?.toString() ?? 'Delicious food.';
+    final String currentLang = context.locale.languageCode;
+    String title = widget.product['name']?.toString() ?? 'Food';
+    String description = widget.product['description']?.toString() ?? 'Delicious food.';
+
+    if (widget.product['translations'] != null) {
+      final translations = widget.product['translations'];
+      if (translations[currentLang] != null) {
+        if (translations[currentLang]['name'] != null && translations[currentLang]['name'].toString().isNotEmpty) {
+          title = translations[currentLang]['name'];
+        }
+        if (translations[currentLang]['description'] != null && translations[currentLang]['description'].toString().isNotEmpty) {
+          description = translations[currentLang]['description'];
+        }
+      }
+    }
     final rating = widget.product['rating']?.toString() ?? '0.0';
     final List<dynamic> reviews = widget.product['reviews'] ?? [];
 
@@ -346,6 +369,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     const SizedBox(height: 12),
                     Text(description, style: TextStyle(fontSize: 15, color: isDark ? Colors.grey[400] : Colors.grey[700], height: 1.6)),
                     
+                    if (widget.product['nutrition'] != null) ...[
+                      const SizedBox(height: 24),
+                      NutritionCard(nutrition: widget.product['nutrition'] as Map<String, dynamic>),
+                    ],
+
                     const Padding(padding: EdgeInsets.symmetric(vertical: 32), child: Divider()),
 
                     Row(

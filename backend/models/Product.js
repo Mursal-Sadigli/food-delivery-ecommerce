@@ -37,6 +37,17 @@ const productSchema = new mongoose.Schema({
   isFlashSale: { type: Boolean, default: false },
   flashSalePrice: { type: Number },
   flashSaleEndDate: { type: Date },
+  nutrition: {
+    calories: { type: Number, default: 0 },
+    protein: { type: Number, default: 0 },
+    fat: { type: Number, default: 0 },
+    carbs: { type: Number, default: 0 },
+  },
+  translations: {
+    en: { name: String, description: String },
+    ru: { name: String, description: String },
+    az: { name: String, description: String },
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Product', productSchema);

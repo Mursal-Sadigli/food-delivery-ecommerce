@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:lottie/lottie.dart' hide Marker;
 import 'package:latlong2/latlong.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'main_screen.dart';
+import 'courier_chat_screen.dart';
 
 class OrderTrackingScreen extends StatefulWidget {
   const OrderTrackingScreen({super.key});
@@ -31,6 +33,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> with TickerPr
     {'title': 'Yoldadır', 'subtitle': 'Kuryer sizə tərəf gəlir 🛵', 'icon': Icons.directions_bike, 'time': '12:55'},
     {'title': 'Çatdırıldı', 'subtitle': 'Nuş olsun! 🎉', 'icon': Icons.check_circle, 'time': '13:10'},
   ];
+  late IO.Socket socket;
 
   @override
   void initState() {
@@ -40,7 +43,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> with TickerPr
       duration: const Duration(seconds: 1),
     )..repeat(reverse: true);
 
-    // Kuryer hərəkət simulyasiyası (hər saniyədə yeri dəyişir)
+    _initSocket();
+
+    // Kuryer hərəkət simulyasiyası (Frontend-dən Emit edilir, Backend-dən dinlənilir)
     final totalSteps = 15;
     int currentMoveStep = 0;
     
@@ -52,16 +57,72 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> with TickerPr
         final newLat = _restaurantLocation.latitude + (_homeLocation.latitude - _restaurantLocation.latitude) * progress;
         final newLng = _restaurantLocation.longitude + (_homeLocation.longitude - _restaurantLocation.longitude) * progress;
         
+        // Backend-ə location yenilənməsini göndər
+        socket.emit('updateLocation', {
+          'orderId': 'simulated_order_123',
+          'latitude': newLat,
+          'longitude': newLng
+        });
+        
         if (mounted) {
           setState(() {
-            _currentCourierLocation = LatLng(newLat, newLng);
-            
             // Addımları da simulyasiya edirik (hər 3 saniyədə bir)
             if (currentMoveStep % 3 == 0 && _currentStep < _steps.length - 1) {
               _currentStep++;
             }
           });
         }
+      } else {
+        if (mounted) setState(() => _currentStep = _steps.length - 1);
+        timer.cancel();
+      }
+    });
+
+    // Xəritə mərkəzləşdirilməsi
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          final bounds = LatLngBounds.fromPoints([_restaurantLocation, _homeLocation]);
+          _mapController.fitCamera(CameraFit.bounds(
+            bounds: bounds,
+            padding: const EdgeInsets.all(50),
+          ));
+        }
+      });
+    });
+  }
+
+  void _initSocket() {
+    // API URL-dən base URL alırıq
+    String socketUrl = 'http://localhost:5000';
+    
+    socket = IO.io(socketUrl, <String, dynamic>{
+      'transports': ['websocket'],
+      'autoConnect': false,
+    });
+    
+    socket.connect();
+    
+    socket.onConnect((_) {
+      print('Sifariş izləmə Socket-ə qoşuldu.');
+      // Otağa qoşul
+      socket.emit('joinOrder', 'simulated_order_123');
+    });
+    
+    // Backend-dən kuryer lokasiyasını dinlə
+    socket.on('courierLocationUpdate', (data) {
+      if (mounted && data != null) {
+        setState(() {
+          _currentCourierLocation = LatLng(
+            (data['latitude'] as num).toDouble(), 
+            (data['longitude'] as num).toDouble()
+          );
+        });
+      }
+    });
+    
+    socket.onDisconnect((_) => print('Sifariş izləmə Socket-dən ayrıldı.'));
+  }
       } else {
         if (mounted) setState(() => _currentStep = _steps.length - 1);
         timer.cancel();
@@ -244,10 +305,15 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> with TickerPr
                     child: Icon(Icons.phone, color: Colors.green.shade600, size: 22),
                   ),
                   const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(12)),
-                    child: Icon(Icons.chat_bubble_outline, color: Colors.blue.shade600, size: 22),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const CourierChatScreen(orderId: 'simulated_order_123')));
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(12)),
+                      child: Icon(Icons.chat_bubble_outline, color: Colors.blue.shade600, size: 22),
+                    ),
                   ),
                 ],
               ),

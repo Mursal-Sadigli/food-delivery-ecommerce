@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/skeleton_item.dart';
 import 'orders_screen.dart';
 import 'login_screen.dart';
 import 'edit_profile_screen.dart';
@@ -122,33 +123,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(width: 24),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            user != null ? (user['name'] ?? 'user'.tr()) : 'loading'.tr(),
-                            style: TextStyle(
-                              fontSize: 24, 
-                              fontWeight: FontWeight.bold, 
-                              color: isDark ? Colors.white : Colors.black87,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              user != null ? (user['email'] ?? '') : '',
-                              style: TextStyle(
-                                fontSize: 13, 
-                                color: isDark ? Colors.grey[400] : Colors.grey[600],
-                                height: 1.2,
+                      child: authProvider.isLoading
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              SkeletonItem(width: 140, height: 24),
+                              SizedBox(height: 8),
+                              SkeletonItem(width: 100, height: 16),
+                            ],
+                          )
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                user != null ? (user['name'] ?? 'user'.tr()) : 'loading'.tr(),
+                                style: TextStyle(
+                                  fontSize: 24, 
+                                  fontWeight: FontWeight.bold, 
+                                  color: isDark ? Colors.white : Colors.black87,
+                                  letterSpacing: -0.5,
+                                ),
                               ),
-                            ),
+                              const SizedBox(height: 8),
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  user != null ? (user['email'] ?? '') : '',
+                                  style: TextStyle(
+                                    fontSize: 13, 
+                                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                    height: 1.2,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
                     ),
                     IconButton(
                       onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfileScreen())),

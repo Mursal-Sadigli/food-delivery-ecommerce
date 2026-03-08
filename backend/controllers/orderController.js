@@ -139,6 +139,33 @@ exports.getMyOrders = async (req, res) => {
   }
 };
 
+// Get QR Code Data for Order
+exports.getOrderQrCode = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ message: 'Sifariş tapılmadı' });
+    }
+    
+    // Yalnız admin və ya sifariş sahibi görə bilər
+    if (order.user.toString() !== req.user._id.toString() && !req.user.isAdmin) {
+      return res.status(403).json({ message: 'İcazəniz yoxdur' });
+    }
+    
+    // Sifariş məlumatlarını JSON kimi birləşdiririk
+    const qrData = JSON.stringify({
+      orderId: order._id,
+      user: order.user,
+      totalPrice: order.totalPrice,
+      status: order.status,
+      timestamp: Date.now()
+    });
+
+    res.json({ qrData });
+  } catch (error) {
+    res.status(500).json({ message: 'Server xətası' });
+  }
+};
 // Implementation for Stripe Payment Intent endpoint
 exports.createPaymentIntent = async (req, res) => {
   try {

@@ -16,10 +16,37 @@ import 'screens/splash_screen.dart';
 
 import 'services/notification_service.dart';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  print("Background-da mesaj gəldi: ${message.messageId}");
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
   await NotificationService().init();
+
+  try {
+    await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+    await messaging.requestPermission(alert: true, badge: true, sound: true);
+    
+    String? token = await messaging.getToken();
+    if (token != null) {
+      print("🔔 FCM Token hazırdır: $token");
+      // Qeyd: Bu token AuthProvider vasitəsilə Login/Register olduqda serverə (fcmToken kimi) göndərilməlidir.
+    }
+    
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      print('Aktiv mühitdə mesaj gəldi: ${message.notification?.title}');
+    });
+  } catch (e) {
+    print("⚠️ Firebase hələ qurulmayıb (google-services.json yoxdur), FCM Push Notification izlənməyəcək.");
+  }
 
   runApp(
     EasyLocalization(

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../providers/product_provider.dart';
+import '../providers/cart_provider.dart';
+import '../providers/wishlist_provider.dart';
+import '../widgets/skeleton_item.dart';
 import '../widgets/product_card.dart';
 
 class DiscoveryFeedScreen extends StatefulWidget {
@@ -20,9 +23,34 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
     });
   }
 
+  void _addToCart(BuildContext context, Map<String, dynamic> product) {
+    final cart = Provider.of<CartProvider>(context, listen: false);
+    cart.addItem(
+      product['_id'],
+      product['name'],
+      product['price']?.toString() ?? '0',
+      product['image'] ?? '',
+    );
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${product['name']} səbətə əlavə edildi 🛒'),
+        duration: const Duration(seconds: 1),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  void _toggleFavorite(BuildContext context, Map<String, dynamic> product) {
+    final wishlist = Provider.of<WishlistProvider>(context, listen: false);
+    wishlist.toggle(product['_id']);
+  }
+
   @override
   Widget build(BuildContext context) {
     final productProvider = Provider.of<ProductProvider>(context);
+    final wishlist = Provider.of<WishlistProvider>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -34,7 +62,25 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
         elevation: 0,
       ),
       body: productProvider.isLoading && productProvider.discoveryData.isEmpty
-          ? const Center(child: CircularProgressIndicator())
+          ? SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SkeletonItem(width: 150, height: 28),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: List.generate(3, (index) => const Padding(padding: EdgeInsets.only(right: 16), child: SkeletonProductCard())),
+                  ),
+                  const SizedBox(height: 32),
+                  const SkeletonItem(width: 180, height: 28),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: List.generate(3, (index) => const Padding(padding: EdgeInsets.only(right: 16), child: SkeletonItem(width: 280, height: 120, borderRadius: 20))),
+                  ),
+                ],
+              ),
+            )
           : RefreshIndicator(
               onRefresh: () => productProvider.fetchDiscovery(),
               child: SingleChildScrollView(
@@ -44,7 +90,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
                   children: [
                     _buildSectionHeader('trending_foods'.tr(), Icons.whatshot, Colors.orange),
                     const SizedBox(height: 16),
-                    _buildTrendingList(productProvider.discoveryData['trending'] ?? []),
+                    _buildHorizontalList(productProvider.discoveryData['trending'] ?? [], wishlist),
                     const SizedBox(height: 32),
                     _buildSectionHeader('new_restaurants'.tr(), Icons.restaurant, Colors.blue),
                     const SizedBox(height: 16),
@@ -52,7 +98,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
                     const SizedBox(height: 32),
                     _buildSectionHeader('popular_now'.tr(), Icons.auto_awesome, Colors.purple),
                     const SizedBox(height: 16),
-                    _buildPopularList(productProvider.discoveryData['popular'] ?? []),
+                    _buildGridList(productProvider.discoveryData['popular'] ?? [], wishlist),
                     const SizedBox(height: 100),
                   ],
                 ),
@@ -71,7 +117,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
     );
   }
 
-  Widget _buildTrendingList(List<dynamic> items) {
+  Widget _buildHorizontalList(List<dynamic> items, WishlistProvider wishlist) {
     if (items.isEmpty) return const Text('Heç bir məhsul tapılmadı');
     return SizedBox(
       height: 280,
@@ -79,13 +125,16 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
         scrollDirection: Axis.horizontal,
         itemCount: items.length,
         itemBuilder: (context, index) {
-          final item = items[index];
+          final item = Map<String, dynamic>.from(items[index]);
+        final isFav = wishlist.isFavorite(item['_id']);
           return Container(
             width: 200,
             margin: const EdgeInsets.only(right: 16),
             child: ProductCard(
               product: item,
-              onAddToCart: () {}, // Simple discovery mode
+              isFavorite: isFav,
+              onFavoriteToggle: () => _toggleFavorite(context, item),
+              onAddToCart: () => _addToCart(context, item),
             ),
           );
         },
@@ -108,7 +157,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: const Offset(0, 4))],
+              boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4))],
             ),
             child: ListTile(
               contentPadding: const EdgeInsets.all(12),
@@ -122,7 +171,6 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
               title: Text(item['name'] ?? 'Restoran', style: const TextStyle(fontWeight: FontWeight.bold)),
               subtitle: Text(item['address'] ?? '', maxLines: 1, overflow: TextOverflow.ellipsis),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () {},
             ),
           );
         },
@@ -130,8 +178,8 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
     );
   }
 
-  Widget _buildPopularList(List<dynamic> items) {
-     return GridView.builder(
+  Widget _buildGridList(List<dynamic> items, WishlistProvider wishlist) {
+    return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -142,7 +190,14 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
       ),
       itemCount: items.length,
       itemBuilder: (context, index) {
-        return ProductCard(product: items[index]);
+        final item = Map<String, dynamic>.from(items[index]);
+        final isFav = wishlist.isFavorite(item['_id']);
+        return ProductCard(
+          product: item,
+          isFavorite: isFav,
+          onFavoriteToggle: () => _toggleFavorite(context, item),
+          onAddToCart: () => _addToCart(context, item),
+        );
       },
     );
   }

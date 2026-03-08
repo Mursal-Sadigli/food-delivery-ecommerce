@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'skeleton_item.dart';
 import '../screens/product_detail_screen.dart';
+import 'product_widgets.dart';
 
 class SkeletonProductCard extends StatelessWidget {
   const SkeletonProductCard({super.key});
@@ -129,8 +131,22 @@ class _ProductCardState extends State<ProductCard> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     final imageUrl = widget.product['image']?.toString() ?? '';
-    final title = widget.product['name']?.toString() ?? 'Məhsul';
-    final description = widget.product['description']?.toString() ?? '';
+    
+    final String currentLang = context.locale.languageCode;
+    String title = widget.product['name']?.toString() ?? 'Məhsul';
+    String description = widget.product['description']?.toString() ?? '';
+
+    if (widget.product['translations'] != null) {
+      final translations = widget.product['translations'];
+      if (translations[currentLang] != null) {
+        if (translations[currentLang]['name'] != null && translations[currentLang]['name'].toString().isNotEmpty) {
+          title = translations[currentLang]['name'];
+        }
+        if (translations[currentLang]['description'] != null && translations[currentLang]['description'].toString().isNotEmpty) {
+          description = translations[currentLang]['description'];
+        }
+      }
+    }
     final price = widget.product['price']?.toString() ?? '0';
     final isFlashSale = widget.product['isFlashSale'] == true;
     final flashSalePrice = widget.product['flashSalePrice']?.toString() ?? price;
@@ -201,22 +217,30 @@ class _ProductCardState extends State<ProductCard> with SingleTickerProviderStat
                     Positioned(
                       top: 12,
                       left: 12,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.bolt, color: Colors.white, size: 14),
-                            SizedBox(width: 4),
-                            Text(
-                              'FLASH',
-                              style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.bolt, color: Colors.white, size: 14),
+                                SizedBox(width: 4),
+                                Text('FLASH', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          ),
+                          if (widget.product['flashSaleEndDate'] != null) ...[  
+                            const SizedBox(height: 4),
+                            FlashSaleCountdown(
+                              endDate: DateTime.tryParse(widget.product['flashSaleEndDate'].toString()) ?? DateTime.now(),
                             ),
                           ],
-                        ),
+                        ],
                       ),
                     ),
                   Positioned(
@@ -253,15 +277,20 @@ class _ProductCardState extends State<ProductCard> with SingleTickerProviderStat
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isDark ? Colors.white : Colors.black), maxLines: 1, overflow: TextOverflow.ellipsis),
-                        if (description.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(description, style: TextStyle(fontSize: 10, color: isDark ? Colors.grey.shade400 : Colors.grey.shade500), maxLines: 2, overflow: TextOverflow.ellipsis),
-                        ],
-                      ],
+                    Flexible(
+                      child: ClipRect(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: isDark ? Colors.white : Colors.black), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            if (description.isNotEmpty) ...[
+                              const SizedBox(height: 1),
+                              Text(description, style: TextStyle(fontSize: 9, color: isDark ? Colors.grey.shade400 : Colors.grey.shade500), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            ],
+                          ],
+                        ),
+                      ),
                     ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -277,12 +306,12 @@ class _ProductCardState extends State<ProductCard> with SingleTickerProviderStat
                                 child: isFlashSale
                                     ? Row(
                                         children: [
-                                          Text('$flashSalePrice ₼', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red)),
+                                          Text('$flashSalePrice ₼', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.red)),
                                           const SizedBox(width: 4),
-                                          Text('$price ₼', style: const TextStyle(fontSize: 12, color: Colors.grey, decoration: TextDecoration.lineThrough)),
+                                          Text('$price ₼', style: const TextStyle(fontSize: 10, color: Colors.grey, decoration: TextDecoration.lineThrough)),
                                         ],
                                       )
-                                    : Text('$price ₼', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isDark ? Colors.white : Colors.black)),
+                                    : Text('$price ₼', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isDark ? Colors.white : Colors.black)),
                               ),
                             ],
                           ),
@@ -290,18 +319,18 @@ class _ProductCardState extends State<ProductCard> with SingleTickerProviderStat
                         const SizedBox(width: 4),
                         GestureDetector(
                           onTap: () {
-                            _likeController.forward(from: 0.0); // Reuse controller for a quick pop
+                            _likeController.forward(from: 0.0);
                             if (widget.onAddToCart != null) widget.onAddToCart!();
                           },
                           child: ScaleTransition(
                             scale: _scaleAnimation,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                               decoration: BoxDecoration(
                                 color: Theme.of(context).colorScheme.primary,
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Text('Əlavə', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
+                              child: const Text('Əlavə', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10)),
                             ),
                           ),
                         ),
