@@ -97,6 +97,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         setState(() {
           _userRating = 0.0;
           _selectedReviewImages.clear();
+          
+          // Məhsul məlumatını provider-dən yenidən tapıb widget-in məlumatını yeniləyirik
+          final updatedProduct = Provider.of<ProductProvider>(context, listen: false).findById(widget.product['_id']);
+          if (updatedProduct != null) {
+            widget.product['reviews'] = updatedProduct['reviews'];
+            widget.product['rating'] = updatedProduct['rating'];
+            widget.product['numReviews'] = updatedProduct['numReviews'];
+          }
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('review_error'.tr()), backgroundColor: Colors.red));

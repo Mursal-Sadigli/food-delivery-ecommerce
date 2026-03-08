@@ -1,4 +1,5 @@
 const Product = require('../models/Product');
+const Review = require('../models/Review');
 const cache = require('../utils/cache');
 const sharp = require('sharp');
 
@@ -212,10 +213,6 @@ exports.createProductReview = async (req, res) => {
         (r) => r.user.toString() === req.user._id.toString()
       );
 
-      if (alreadyReviewed) {
-        return res.status(400).json({ message: 'Siz artıq rəy bildirmisiniz' });
-      }
-
       const reviewImages = [];
       if (images && Array.isArray(images)) {
         for (let img of images) {
@@ -236,21 +233,52 @@ exports.createProductReview = async (req, res) => {
         }
       }
 
-      const review = {
-        name: req.user.name,
-        rating: Number(rating),
-        comment,
-        user: req.user._id,
-        images: reviewImages
-      };
+      if (alreadyReviewed) {
+        // Update existing review in Product model
+        alreadyReviewed.rating = Number(rating);
+        alreadyReviewed.comment = comment;
+        alreadyReviewed.images = reviewImages;
+        alreadyReviewed.name = req.user.name;
+      } else {
+        // Create new review in Product model
+        const review = {
+          name: req.user.name,
+          rating: Number(rating),
+          comment,
+          user: req.user._id,
+          images: reviewImages
+        };
+        product.reviews.push(review);
+      }
 
-      product.reviews.push(review);
       product.numReviews = product.reviews.length;
       product.rating =
         product.reviews.reduce((acc, item) => item.rating + acc, 0) / product.reviews.length;
 
       await product.save();
-      res.status(201).json({ message: 'Rəy əlavə edildi' });
+
+      // Upsert separate Review record for the Admin Panel
+      try {
+        await Review.findOneAndUpdate(
+          { user: req.user._id, product: product._id },
+          {
+            user: req.user._id,
+            name: req.user.name,
+            rating: Number(rating),
+            comment,
+            product: product._id,
+            images: reviewImages
+          },
+          { upsert: true, new: true }
+        );
+      } catch (reviewErr) {
+        console.error('Separate Review upsert failed:', reviewErr);
+      }
+
+      // Clear cache
+      cache.clear();
+
+      return res.status(201).json({ message: alreadyReviewed ? 'Rəy yeniləndi' : 'Rəy əlavə edildi' });
     } else {
       res.status(404).json({ message: 'Məhsul tapılmadı' });
     }

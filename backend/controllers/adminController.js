@@ -231,10 +231,35 @@ exports.deleteReview = async (req, res) => {
   try {
     const review = await Review.findById(req.params.id);
     if (!review) return res.status(404).json({ message: 'Rəy tapılmadı' });
+    
+    // Also remove from Product's reviews array
+    await Product.updateOne(
+      { _id: review.product },
+      { 
+        $pull: { reviews: { user: review.user, comment: review.comment } },
+        $inc: { numReviews: -1 }
+      }
+    );
+
+    // Recalculate average rating for the product (optional but recommended)
+    const product = await Product.findById(review.product);
+    if (product && product.reviews.length > 0) {
+      product.rating = product.reviews.reduce((acc, item) => item.rating + acc, 0) / product.reviews.length;
+    } else if (product) {
+      product.rating = 0;
+    }
+    if (product) await product.save();
+
     await review.deleteOne();
+    
+    // Clear cache
+    const cache = require('../utils/cache');
+    cache.clear();
+
     await createLog(req.user._id, 'DELETE_REVIEW', 'Review', req.params.id, `Rəy silindi: ${review.comment.substring(0, 20)}...`, req);
     res.json({ message: 'Rəy silindi' });
   } catch (error) {
+    console.error('Admin deleteReview error:', error);
     res.status(500).json({ message: 'Rəy silinərkən xəta yarandı.' });
   }
 };
